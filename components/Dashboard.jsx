@@ -1,171 +1,195 @@
 "use client";
-import { Search, Menu, ArrowRight, Calendar, Clock, Briefcase } from "lucide-react";
+
+import { useState } from "react";
+import { Search, Menu, ArrowRight, Calendar, Clock, Briefcase, Plus, Settings, LogOut, LayoutDashboard } from "lucide-react";
 
 export default function Dashboard() {
   const green = "#8FE649";
 
+  const [companies, setCompanies] = useState([
+    { company: "SAP Labs", date: "24-08-2025 (Saturday)", role: "Software Developer", time: "10:00 AM" },
+    { company: "Google", date: "30-08-2025 (Friday)", role: "SDE Intern", time: "9:00 AM" },
+    { company: "Amazon", date: "02-09-2025 (Monday)", role: "Cloud Engineer", time: "11:30 AM" },
+    { company: "Microsoft", date: "05-09-2025 (Thursday)", role: "Data Scientist", time: "1:00 PM" },
+    { company: "Meta", date: "10-09-2025 (Tuesday)", role: "AI Researcher", time: "3:00 PM" },
+    { company: "Apple", date: "15-09-2025 (Sunday)", role: "iOS Developer", time: "2:00 PM" },
+  ]);
+
+  const [form, setForm] = useState({ company: "", date: "", role: "", time: "" });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleAddCompany = (e) => {
+    e.preventDefault();
+    if (form.company && form.date && form.role && form.time) {
+      setCompanies([...companies, form]);
+      setForm({ company: "", date: "", role: "", time: "" });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
-      {/* BACKGROUND LAYERS */}
-      <div className="absolute inset-0 z-0">
-        {/* Radial glow center */}
-        <div
-          className="absolute inset-0 animate-pulse"
-          style={{
-            background: `radial-gradient(circle at center, rgba(143,230,73,0.1), transparent 70%)`,
-          }}
-        />
-        {/* Grid overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(transparent,rgba(255,255,255,0.04)_1px)] bg-[size:50px_50px] opacity-20" />
-        {/* Subtle particles */}
-        <div className="absolute inset-0 pointer-events-none animate-[moveParticles_60s_linear_infinite]" 
-          style={{
-            background: `url('https://www.transparenttextures.com/patterns/stardust.png')`,
-            opacity: 0.06
-          }}
-        />
-      </div>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        backgroundImage: `url('https://i.pinimg.com/1200x/68/41/56/6841566e3471ff089e2b2389ae208a01.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Overlay for readability */}
+      <div className="bg-black/70 backdrop-blur-md min-h-screen flex flex-col text-white">
 
-      {/* Header */}
-            <header className="flex items-center justify-between px-8 py-4 border-b border-neutral-800">
-              <h1 className="text-2xl font-bold text-white tracking-wide">
-                <span className="text-[#8FE649] drop-shadow-[0_0_8px_#8FE649]">TRACK</span>
-                FOLIO
-              </h1>
-              <div className="flex items-center gap-6">
-                <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
-                  <a href="#" className="hover:text-[#8FE649] transition">Previous</a>
-                  <a href="#" className="hover:text-[#8FE649] transition">Today</a>
-                  <a href="#" className="hover:text-[#8FE649] transition">Future</a>
-                </nav>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="rounded-full bg-neutral-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8FE649] placeholder-neutral-500"
-                  />
-                  <Search className="absolute right-3 top-2.5 w-4 h-4 text-neutral-500" />
-                </div>
-                <button className="md:hidden">
-                  <Menu className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </header>
+        <header className="flex items-center relative px-8 py-4">
+          <h1 className="text-2xl font-bold tracking-wide text-white">
+            <span style={{ color: "white" }}>TRACK</span>FOLIO
+          </h1>
 
-      {/* HERO */}
-      <section className="text-center mt-14 relative z-10 px-4">
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-4 leading-tight bg-gradient-to-r from-green-300 to-lime-500 bg-clip-text text-transparent">
-          Welcome Aditya!
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-          Stop juggling spreadsheets and emails during placement season. Stay organized with one futuristic platform built just for you.
-        </p>
-      </section>
+          <nav
+            className="hidden md:flex justify-center items-center gap-6 text-lg text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            aria-label="Main navigation"
+          >
+            {["Completed", "Up Next", "Upcoming"].map((item) => (
+              <a key={item} href="#" className="hover:text-[#8FE649] transition">
+                {item}
+              </a>
+            ))}
+          </nav>
 
-      {/* COMPANY SECTION */}
-      <section className="mt-24 px-10 relative z-10">
-        <h2 className="text-center text-3xl md:text-4xl font-bold mb-12">
-          <span className="text-white">UPCOMING </span>
-          <span className="text-lime-400">COMPANIES</span>
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 justify-items-center">
-          {[
-            {
-              company: "SAP Labs",
-              date: "24-08-2025 (Saturday)",
-              role: "Software Developer",
-              time: "10:00 AM",
-            },
-            {
-              company: "Google",
-              date: "30-08-2025 (Friday)",
-              role: "SDE Intern",
-              time: "9:00 AM",
-            },
-            {
-              company: "Amazon",
-              date: "02-09-2025 (Monday)",
-              role: "Cloud Engineer",
-              time: "11:30 AM",
-            },
-          ].map((drive, idx) => (
-            <div
-              key={idx}
-              className="relative w-80 rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.04]"
+          <div className="relative max-w-2xl ml-10 flex-shrink-0">
+            <label htmlFor="search" className="sr-only">Search</label>
+            <input
+              id="search"
+              type="text"
+              placeholder="Search..."
+              className="w-full rounded-full bg-neutral-900 px-4 py-2 text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
+            />
+            <Search className="absolute right-3 top-2.5 w-4 h-4 text-neutral-500 pointer-events-none" />
+          </div>
+
+          <div className="flex items-center ml-auto gap-4">
+            <button aria-label="Dashboard" className="hidden md:block hover:text-[#8FE649] transition">
+              <LayoutDashboard className="w-6 h-6" />
+            </button>
+            <button aria-label="Settings" className="hidden md:block hover:text-[#8FE649] transition">
+              <Settings className="w-6 h-6" />
+            </button>
+            <button aria-label="Logout" className="hidden md:block hover:text-[#8FE649] transition">
+              <LogOut className="w-6 h-6" />
+            </button>
+            <button className="md:hidden ml-4" aria-label="Open menu">
+              <Menu className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </header>
+
+        <section className="text-center mt-50 mx-auto">
+          <h1 className="text-8xl font-extrabold mb-4" style={{ color: "white" }}>
+            Welcome Aditya!
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Stop juggling spreadsheets and emails during placement season. <br /> Stay organized with one platform built just for you.
+          </p>
+        </section>
+
+        <section className="mt-12 px-6 max-w-3xl mx-auto">
+          <h2 className="flex justify-center text-xl font-semibold mb-6" style={{ color: "white" }}>
+            Add a Company
+          </h2>
+          <form onSubmit={handleAddCompany} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="company"
+              placeholder="Company Name"
+              value={form.company}
+              onChange={handleChange}
+              className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
+              required
+            />
+            <input
+              type="text"
+              name="role"
+              placeholder="Role"
+              value={form.role}
+              onChange={handleChange}
+              className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
+              required
+            />
+            <input
+              type="text"
+              name="date"
+              placeholder="Date (e.g. 24-08-2025)"
+              value={form.date}
+              onChange={handleChange}
+              className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
+              required
+            />
+            <select
+  name="campusType"
+  value={form.campusType}
+  onChange={handleChange}
+  className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
+  required
+>
+  <option value="" disabled>
+    Select Campus Type
+  </option>
+  <option value="off-campus">Off Campus</option>
+  <option value="on-campus">On Campus</option>
+</select>
+
+            <button
+              type="submit"
+              className="col-span-full bg-[#8FE649] text-white font-semibold py-2 rounded-md hover:bg-white hover:text-[#8FE649] transition"
             >
-              {/* Futuristic border glow */}
+              <Plus size={16} className="inline-block mr-2" /> Add Company
+            </button>
+          </form>
+        </section>
+
+        <section className="mt-50 max-w-6xl mx-auto">
+          <h2 className="text-6xl font-bold mb-12 text-white text-center">Upcoming Companies</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-20">
+            {companies.map((drive, idx) => (
               <div
-                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-green-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              ></div>
+                key={idx}
+                className="bg-neutral-900 rounded-lg p-8 border border-neutral-700 cursor-pointer transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg min-w-[280px]"
+              >
+                <h3 className="text-xl font-semibold text-[#8FE649] mb-4">{drive.company}</h3>
 
-              {/* Card Content */}
-              <div className="relative bg-black/60 backdrop-blur-lg rounded-2xl p-8 flex flex-col gap-2 shadow-[0_8px_25px_rgba(143,230,73,0.15)]">
-                {/* Company Logo */}
-                <div
-                  className="w-14 h-14 flex items-center justify-center rounded-full text-black font-bold text-xl shadow-md"
-                  style={{ background: green }}
-                >
-                  {drive.company[0]}
-                </div>
-
-                {/* Company Name */}
-                <h3 className="text-2xl font-bold mt-3 tracking-wide text-green-300">
-                  {drive.company}
-                </h3>
-
-                {/* Info */}
-                <div className="text-sm text-gray-300 space-y-3 mt-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
+                <div className="text-gray-400 text-sm space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-5 h-5" />
                     <span>{drive.date}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-gray-400" />
+                  <div className="flex items-center gap-3">
+                    <Briefcase className="w-5 h-5" />
                     <span>{drive.role}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5" />
                     <span>{drive.time}</span>
                   </div>
                 </div>
 
-                {/* Button */}
                 <button
-                  className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold rounded-full py-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(143,230,73,0.6)]"
-                  style={{
-                    background: green,
-                    color: "black",
-                  }}
+                  className="mt-6 flex items-center gap-2 text-white hover:text-[#8FE649] font-medium text-sm"
                 >
-                  View Details <ArrowRight size={14} />
+                  View Details <ArrowRight size={16} />
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="mt-auto text-gray-500 text-xs px-10 py-8 border-t border-gray-800 relative z-10 backdrop-blur-lg bg-black/30">
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div className="flex gap-4 flex-wrap text-gray-400 text-sm">
-            {["Home", "About", "Terms of Service", "Privacy Policy", "Cookie Policy", "Contact Us", "Send Feedback"].map((item) => (
-              <a key={item} href="#" className="hover:text-white transition-all">
-                {item}
-              </a>
             ))}
           </div>
-          <p className="text-gray-400">©2025 Jithya Vaishnavi</p>
-        </div>
-      </footer>
+        </section>
 
-      {/* Particle animation keyframes */}
-      <style jsx>{`
-        @keyframes moveParticles {
-          from { background-position: 0 0; }
-          to { background-position: 1000px 1000px; }
-        }
-      `}</style>
+        
+
+
+
+      </div>
     </div>
   );
 }

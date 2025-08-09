@@ -1,11 +1,10 @@
-import Navbar from "@/components/NavbarHome";
-import AboutSection from "@/components/AboutSection";
-
+import Navbar from "@/components/Navbar";
+import About from "@/components/About";
 export default function Page() {
     return (
         <>
             <Navbar />  
-            <AboutSection />
+            <About />
         </>
     );
 }

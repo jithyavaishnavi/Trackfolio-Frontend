@@ -1,12 +1,15 @@
 // app/page.js
-import Navbar from "@/components/NavbarHome";
-import Home from "../components/Home";
+import LaunchPage from "@/components/LaunchPage";
+
+export const metadata = {
+  title: "Trackfolio - Home",
+  description: "Welcome to Trackfolio",
+};
 
 export default function Page() {
   return (
     <>
-    <Navbar />
-      <Home />
-          </>
+      <LaunchPage />
+    </>
   );
 }
