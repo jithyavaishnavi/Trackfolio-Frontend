@@ -4,95 +4,91 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
-// Environment variable for backend URL
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/drives";
 
 export default function Dashboard() {
   const green = "#8FE649";
   const router = useRouter();
 
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
 
   const [form, setForm] = useState({
-    company: "",
-    date: "",
+    companyName: "",
     role: "",
-    time: "",
+    driveDatetime: "",
     campusType: "",
   });
 
-  // Handle form input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Fetch companies from backend
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${BASE_URL}/companies`);
-        if (!res.ok) throw new Error("Failed to fetch companies");
-        const data = await res.json();
-        setCompanies(data);
-      } catch (err) {
-        setError("Failed to load companies. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const showToast = (message, duration = 3000) => {
+    setToast(message);
+    setTimeout(() => setToast(null), duration);
+  };
 
-    fetchCompanies();
-  }, []);
-
-  // Add a new company
-  const handleAddCompany = async (e) => {
+  const handleAddDrive = async (e) => {
     e.preventDefault();
-    const { company, date, role, campusType } = form;
+    const { companyName, role, driveDatetime, campusType } = form;
 
-    if (!company || !date || !role || !campusType) {
-      alert("Please fill all fields");
+    if (!companyName || !role || !driveDatetime || !campusType) {
+      setError("Please fill all fields");
       return;
     }
 
+    setError(""); // Clear previous errors
+    setLoading(true);
+
+    const isoDatetime = new Date(driveDatetime).toISOString();
+
+    const payload = {
+      companyId: uuidv4(),
+      isUpdate: false,
+      companyName,
+      role,
+      driveDatetime: isoDatetime,
+      isOnCampus: campusType === "on-campus",
+      notes: [],
+      checklists: [],
+    };
+
     try {
-      const res = await fetch(`${BASE_URL}/companies`, {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/save`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to add company");
+      if (!res.ok) throw new Error("Failed to save drive");
 
-      const newCompany = await res.json();
-      setCompanies([...companies, newCompany]);
-      setForm({ company: "", date: "", role: "", time: "", campusType: "" });
+      const newDrive = await res.json();
+      showToast(`Drive for ${newDrive.companyName} added successfully!`);
+      setForm({ companyName: "", role: "", driveDatetime: "", campusType: "" });
     } catch (err) {
       console.error(err);
-      alert("Error adding company. Please try again.");
+      setError("Error adding drive. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Logout function
   const handleLogout = async () => {
     try {
-      // Optional: call backend logout endpoint if it exists
-      await fetch(`${BASE_URL}/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (err) {
+      await fetch(`${BASE_URL}/logout`, { method: "POST", credentials: "include" });
+    } catch {
       console.warn("Backend logout failed, continuing frontend logout...");
     }
-
-    // Clear frontend session/token
     localStorage.removeItem("token");
     sessionStorage.clear();
-
-    // Redirect to login page
     router.push("/login");
   };
 
@@ -102,21 +98,15 @@ export default function Dashboard() {
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 animate-pulse"
-          style={{
-            background: `radial-gradient(circle at center, rgba(143,230,73,0.1), transparent 70%)`,
-          }}
+          style={{ background: `radial-gradient(circle at center, rgba(143,230,73,0.1), transparent 70%)` }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(transparent,rgba(255,255,255,0.04)_1px)] bg-[size:50px_50px] opacity-20" />
         <div
           className="absolute inset-0 pointer-events-none animate-[moveParticles_60s_linear_infinite]"
-          style={{
-            background: `url('https://www.transparenttextures.com/patterns/stardust.png')`,
-            opacity: 0.06,
-          }}
+          style={{ background: `url('https://www.transparenttextures.com/patterns/stardust.png')`, opacity: 0.06 }}
         />
       </div>
 
-      {/* Main Content */}
       <div
         className="min-h-screen flex flex-col"
         style={{
@@ -138,15 +128,9 @@ export default function Dashboard() {
             </Link>
             <div className="flex items-center gap-6">
               <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
-                <a href="#" className="hover:text-[#8FE649] transition">
-                  Previous
-                </a>
-                <a href="#" className="hover:text-[#8FE649] transition">
-                  Today
-                </a>
-                <a href="#" className="hover:text-[#8FE649] transition">
-                  Future
-                </a>
+                <a href="#" className="hover:text-[#8FE649] transition">Previous</a>
+                <a href="#" className="hover:text-[#8FE649] transition">Today</a>
+                <a href="#" className="hover:text-[#8FE649] transition">Future</a>
               </nav>
               <div className="relative">
                 <input
@@ -161,7 +145,7 @@ export default function Dashboard() {
                 onClick={handleLogout}
                 className="flex items-center gap-1 px-3 py-2 bg-transparent-600 hover:bg-[#8FE649] rounded-md transition"
               >
-                <LogOut size={16} /> 
+                <LogOut size={16} />
               </button>
               <button className="md:hidden" aria-label="Open menu">
                 <Menu className="w-6 h-6 text-white" />
@@ -169,7 +153,7 @@ export default function Dashboard() {
             </div>
           </header>
 
-          {/* Hero Section */}
+          {/* Hero */}
           <section className="text-center mt-50 relative z-10 px-4">
             <h1 className="text-5xl md:text-6xl font-extrabold mb-4 leading-tight bg-gradient-to-r from-green-300 to-lime-500 bg-clip-text text-transparent">
               Welcome Aditya!
@@ -179,18 +163,15 @@ export default function Dashboard() {
             </p>
           </section>
 
-          {/* Add Company Form */}
+          {/* Add Drive Form */}
           <section className="mt-12 px-6 max-w-3xl mx-auto">
-            <h2 className="text-xl font-semibold mb-6 text-center">Add a Company</h2>
-            <form
-              onSubmit={handleAddCompany}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
+            <h2 className="text-xl font-semibold mb-6 text-center">Add a Drive</h2>
+            <form onSubmit={handleAddDrive} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
-                name="company"
+                name="companyName"
                 placeholder="Company Name"
-                value={form.company}
+                value={form.companyName}
                 onChange={handleChange}
                 className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
                 required
@@ -206,9 +187,9 @@ export default function Dashboard() {
               />
               <input
                 type="date"
-                name="date"
-                placeholder="Date"
-                value={form.date}
+                name="driveDatetime"
+                placeholder="Drive Date"
+                value={form.driveDatetime}
                 onChange={handleChange}
                 className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
                 required
@@ -220,9 +201,7 @@ export default function Dashboard() {
                 className="rounded-md px-4 py-2 bg-neutral-900 text-white focus:outline-none focus:ring-2 focus:ring-[#8FE649]"
                 required
               >
-                <option value="" disabled>
-                  Select Campus Type
-                </option>
+                <option value="" disabled>Select Campus Type</option>
                 <option value="on-campus">On Campus</option>
                 <option value="off-campus">Off Campus</option>
               </select>
@@ -230,17 +209,21 @@ export default function Dashboard() {
                 type="submit"
                 className="col-span-full bg-[#8FE649] text-white font-semibold py-2 rounded-md hover:bg-white hover:text-[#8FE649] transition"
               >
-                <Plus size={16} className="inline-block mr-2" /> Add Company
+                <Plus size={16} className="inline-block mr-2" /> Add Drive
               </button>
             </form>
 
-            {/* Loading & Error */}
             {loading && (
               <div className="flex justify-center mt-4">
                 <div className="w-8 h-8 border-4 border-lime-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
             {error && <p className="text-center mt-4 text-red-500">{error}</p>}
+            {toast && (
+              <div className="fixed bottom-6 right-6 bg-[#8FE649] text-black px-4 py-2 rounded shadow-lg animate-fadeIn">
+                {toast}
+              </div>
+            )}
           </section>
         </div>
       </div>

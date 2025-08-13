@@ -14,7 +14,7 @@ export default function LaunchPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/auth/login";
 
   // Auth guard: redirect if already logged in
   useEffect(() => {

@@ -1,23 +1,24 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/drives/type?type=nextup";
 
 export default function UpcomingCompanies() {
+  const router = useRouter(); // <-- Add this
   const greenGradient = "linear-gradient(135deg, #8fe649, #4caf50)";
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch companies from backend
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${BASE_URL}/companies/upcoming`);
+        const res = await fetch(BASE_URL);
         if (!res.ok) throw new Error("Failed to fetch upcoming companies");
         const data = await res.json();
         setCompanies(data);
@@ -45,14 +46,16 @@ export default function UpcomingCompanies() {
   }
 
   if (!companies.length) {
-    return <p className="text-center text-gray-300 py-10">No upcoming companies found.</p>;
+    return <p className="text-center text-gray-300 py-10">No drives found.</p>;
   }
+
+  const handleViewDetails = (id) => {
+    router.push(`/company/${id}`);
+  };
 
   return (
     <section className="mt-10 mb-12 max-w-6xl mx-auto px-4">
-      <h2 className="text-4xl md:text-6xl font-bold mb-12 text-white text-center">
-        Upcoming Companies
-      </h2>
+      <h2 className="text-4xl md:text-6xl font-bold mb-12 text-white text-center">Next Up</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {companies.map((drive, idx) => (
           <motion.div
@@ -62,7 +65,6 @@ export default function UpcomingCompanies() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1, duration: 0.5, type: "tween" }}
           >
-            {/* Company Logo */}
             <div
               className="w-14 h-14 flex items-center justify-center rounded-full text-black font-bold text-xl shadow-md"
               style={{ background: greenGradient }}
@@ -70,10 +72,8 @@ export default function UpcomingCompanies() {
               {drive.company?.[0] || "?"}
             </div>
 
-            {/* Company Name */}
             <h3 className="text-2xl font-bold text-green-300">{drive.company}</h3>
 
-            {/* Info */}
             <div className="text-gray-300 space-y-2 mt-2">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-gray-400" />
@@ -89,8 +89,8 @@ export default function UpcomingCompanies() {
               </div>
             </div>
 
-            {/* Button */}
             <button
+              onClick={() => handleViewDetails(drive.id)} // <-- Add this
               className="mt-4 flex items-center justify-center gap-2 rounded-full py-2 px-4 font-semibold text-black hover:text-black transition-all duration-300"
               style={{ background: greenGradient }}
               aria-label={`View details for ${drive.company}`}

@@ -2,22 +2,19 @@
 import React, { useState, useEffect } from "react";
 import { Montserrat, Poppins } from "next/font/google";
 import { Menu, Plus, Search, Trash2 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "600", "700"] });
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
-export default function Company() {
+export default function Company({ companyId }) {
   const [resume, setResume] = useState(null);
   const [notes, setNotes] = useState([""]);
-  const [checklist, setChecklist] = useState([
-    { label: "AWS", checked: false },
-    { label: "Javascript", checked: false },
-    { label: "Fill the form", checked: false },
-  ]);
+  const [checklist, setChecklist] = useState([]);
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
-  const [companyName, setCompanyName] = useState("SAPLABs");
-  const [highlightDate, setHighlightDate] = useState(15);
+  const [companyName, setCompanyName] = useState("");
+  const [highlightDate, setHighlightDate] = useState(new Date().getDate());
 
   // File handler
   const handleFileChange = (e) => {
@@ -56,13 +53,12 @@ export default function Company() {
       formData.append("checklist", JSON.stringify(checklist));
       if (resume) formData.append("resume", resume);
 
-      const res = await fetch("http://localhost:5000/api/company/1", {
+      const res = await fetch(`http://localhost:5000/api/company/${companyId}`, {
         method: "PUT",
         body: formData,
       });
 
       if (!res.ok) throw new Error("Failed to save");
-
       const data = await res.json();
       console.log("Save successful:", data);
       alert("Data saved successfully!");
@@ -72,34 +68,48 @@ export default function Company() {
     }
   };
 
-  // Fetch data from backend
+  // Fetch company data dynamically
   useEffect(() => {
+    if (!companyId) return;
+
     async function fetchData() {
       try {
-        const res = await fetch("http://localhost:5000/api/company/1");
-        if (!res.ok) throw new Error("Failed to fetch");
+        const res = await fetch(`http://localhost:5000/api/company/${companyId}`);
+        if (!res.ok) throw new Error("Failed to fetch company data");
         const data = await res.json();
 
-        setCompanyName(data.companyName || "SAPLABs");
+        setCompanyName(data.companyName || "");
         setJobTitle(data.jobTitle || "");
         setJobDescription(data.jobDescription || "");
-        setHighlightDate(data.highlightDate || 15);
+        setHighlightDate(data.highlightDate || new Date().getDate());
 
-        if (data.notes) setNotes(Array.isArray(data.notes) ? data.notes : JSON.parse(data.notes));
-        if (data.checklist)
-          setChecklist(
-            Array.isArray(data.checklist)
+        setNotes(
+          data.notes
+            ? Array.isArray(data.notes)
+              ? data.notes
+              : JSON.parse(data.notes)
+            : [""]
+        );
+
+        setChecklist(
+          data.checklist
+            ? Array.isArray(data.checklist)
               ? data.checklist.map((c) =>
                   typeof c === "string" ? { label: c, checked: false } : c
                 )
               : JSON.parse(data.checklist)
-          );
+            : []
+        );
       } catch (err) {
         console.error("Error fetching company data:", err);
+        setChecklist([]);
+        setNotes([""]);
+        setCompanyName("");
       }
     }
+
     fetchData();
-  }, []);
+  }, [companyId]);
 
   return (
     <div className={`flex flex-col min-h-screen bg-black text-white ${montserrat.className}`}>
@@ -209,56 +219,34 @@ export default function Company() {
             <input
               type="file"
               onChange={handleFileChange}
-              className="w-full text-sm text-neutral-200 file:bg-neutral-800 file:text-white file:rounded-md file:px-3 file:py-2 file:border file:border-neutral-700 file:cursor-pointer hover:file:bg-[#8FE649] hover:file:text-black transition"
+              className="w-full text-sm text-neutral-200 file:bg-neutral-800 file:text-white file:rounded-md file:px-3 file:py-2 file:border file:border-neutral-700 file:cursor-pointer hover:file:bg-[#8FE649] hover:file:text-black transition-all"
             />
           </div>
 
           {/* Notes */}
-          {notes.map((note, idx) => (
-            <div key={idx} className="relative mt-4">
-              <textarea
-                value={note}
-                onChange={(e) => updateNote(e.target.value, idx)}
-                placeholder="Notes..."
-                rows={4}
-                className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
-              />
-              {idx > 0 && (
-                <button
-                  onClick={() => removeNote(idx)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-400"
-                  aria-label="Delete note"
-                >
-                  <Trash2 className="w-4 h-4" />
+          <div className="mt-6 space-y-2">
+            {notes.map((note, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <textarea
+                  value={note}
+                  onChange={(e) => updateNote(e.target.value, idx)}
+                  className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner resize-none"
+                  rows={2}
+                />
+                <button onClick={() => removeNote(idx)}>
+                  <Trash2 className="w-5 h-5 text-red-500" />
                 </button>
-              )}
-            </div>
-          ))}
-
-          {/* Add Note Button */}
-          <div className="flex items-center gap-4 mt-6">
+              </div>
+            ))}
             <button
               onClick={addNote}
-              className="bg-neutral-800 rounded-full p-2 hover:bg-[#8FE649] hover:text-black transition"
-              aria-label="Add note"
+              className="flex items-center gap-2 text-[#8FE649] font-semibold hover:underline"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5" /> Add Note
             </button>
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="text-neutral-500 text-xs flex items-center justify-center border-t border-neutral-800 py-4 gap-4 flex-wrap">
-        <a href="#" className="hover:text-[#8FE649]">Home</a>|
-        <a href="#" className="hover:text-[#8FE649]">About</a>|
-        <a href="#" className="hover:text-[#8FE649]">Terms of Service</a>|
-        <a href="#" className="hover:text-[#8FE649]">Privacy Policy</a>|
-        <a href="#" className="hover:text-[#8FE649]">Cookie Policy</a>|
-        <a href="#" className="hover:text-[#8FE649]">Contact Us</a>|
-        <a href="#" className="hover:text-[#8FE649]">Send feedback</a>
-        <span className="ml-4">©2025 Jithya Vaishnavi</span>
-      </footer>
     </div>
   );
 }

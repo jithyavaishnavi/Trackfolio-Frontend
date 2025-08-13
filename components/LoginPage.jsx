@@ -3,16 +3,15 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, error: authError, loading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Email format regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,12 +41,33 @@ export default function LoginPage() {
       return;
     }
 
+    setLoading(true);
+
     try {
-      const success = await login(email, password);
-      if (success) router.replace("/home");
-      else setError(authError || "Login failed. Please try again.");
+      const response = await fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Backend returned an error
+        setError(data.message || "Login failed. Please try again.");
+      } else {
+        // Save token to localStorage or cookies
+        localStorage.setItem("token", data.token);
+
+        // Redirect user to home page
+        router.replace("/home");
+      }
     } catch (err) {
       setError("Network error: " + err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -87,12 +107,7 @@ export default function LoginPage() {
           </h2>
 
           <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handleSubmit}>
-            {/* Email input */}
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
             <input
-              id="email"
               type="email"
               placeholder="Email address"
               value={email}
@@ -100,17 +115,10 @@ export default function LoginPage() {
               className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
               required
               disabled={loading}
-              aria-invalid={!!error}
-              aria-describedby="email-error"
             />
 
-            {/* Password input */}
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
             <div className="relative">
               <input
-                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
@@ -118,20 +126,16 @@ export default function LoginPage() {
                 className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
                 required
                 disabled={loading}
-                aria-invalid={!!error}
-                aria-describedby="password-error"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649] font-medium"
-                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
@@ -143,17 +147,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Error message */}
-          {(error || authError) && (
-            <p
-              id="email-error"
-              className="text-red-400 text-center mt-2 text-sm font-semibold"
-            >
-              {error || authError}
+          {error && (
+            <p className="text-red-400 text-center mt-2 text-sm font-semibold">
+              {error}
             </p>
           )}
 
-          {/* Terms and sign-up */}
           <p className="text-xs sm:text-sm text-gray-400 mt-6 text-center">
             By continuing, you agree to the{" "}
             <span className="text-green-400 cursor-pointer hover:underline">

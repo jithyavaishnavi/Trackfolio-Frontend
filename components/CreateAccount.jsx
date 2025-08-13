@@ -30,7 +30,7 @@ export default function CreateAccount() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/auth/register";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
