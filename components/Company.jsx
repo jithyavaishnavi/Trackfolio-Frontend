@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Montserrat, Poppins } from "next/font/google";
 import { Menu, Plus, Search, Trash2 } from "lucide-react";
 
@@ -9,14 +8,20 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
 export default function Company() {
   const [resume, setResume] = useState(null);
-  const [jobDesc, setJobDesc] = useState(null);
-  const [notes, setNotes] = useState([""]); // notes array
-  const [checklist, setChecklist] = useState(["AWS", "Javascript", "Fill the form"]); // checkboxes array
+  const [notes, setNotes] = useState([""]);
+  const [checklist, setChecklist] = useState([
+    { label: "AWS", checked: false },
+    { label: "Javascript", checked: false },
+    { label: "Fill the form", checked: false },
+  ]);
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [companyName, setCompanyName] = useState("SAPLABs");
+  const [highlightDate, setHighlightDate] = useState(15);
 
-  const handleFileChange = (e, setFile) => {
-    if (e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
+  // File handler
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) setResume(e.target.files[0]);
   };
 
   // Notes actions
@@ -26,29 +31,82 @@ export default function Company() {
     updated[index] = value;
     setNotes(updated);
   };
-  const removeNote = (index) => {
-    setNotes(notes.filter((_, idx) => idx !== index));
-  };
+  const removeNote = (index) => setNotes(notes.filter((_, idx) => idx !== index));
 
   // Checklist actions
   const addCheckbox = () => {
     const label = prompt("Enter checkbox label:");
-    if (label && label.trim() !== "") {
-      setChecklist([...checklist, label.trim()]);
-    }
+    if (label && label.trim() !== "")
+      setChecklist([...checklist, { label: label.trim(), checked: false }]);
   };
 
   const toggleCheckbox = (index) => {
-    // Optional: if you want to keep track of checked/unchecked state in the future
+    const updated = [...checklist];
+    updated[index].checked = !updated[index].checked;
+    setChecklist(updated);
   };
+
+  // Save data
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("jobTitle", jobTitle);
+      formData.append("jobDescription", jobDescription);
+      formData.append("notes", JSON.stringify(notes));
+      formData.append("checklist", JSON.stringify(checklist));
+      if (resume) formData.append("resume", resume);
+
+      const res = await fetch("http://localhost:5000/api/company/1", {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to save");
+
+      const data = await res.json();
+      console.log("Save successful:", data);
+      alert("Data saved successfully!");
+    } catch (err) {
+      console.error("Error saving data:", err);
+      alert("Error saving data. Check console for details.");
+    }
+  };
+
+  // Fetch data from backend
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch("http://localhost:5000/api/company/1");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+
+        setCompanyName(data.companyName || "SAPLABs");
+        setJobTitle(data.jobTitle || "");
+        setJobDescription(data.jobDescription || "");
+        setHighlightDate(data.highlightDate || 15);
+
+        if (data.notes) setNotes(Array.isArray(data.notes) ? data.notes : JSON.parse(data.notes));
+        if (data.checklist)
+          setChecklist(
+            Array.isArray(data.checklist)
+              ? data.checklist.map((c) =>
+                  typeof c === "string" ? { label: c, checked: false } : c
+                )
+              : JSON.parse(data.checklist)
+          );
+      } catch (err) {
+        console.error("Error fetching company data:", err);
+      }
+    }
+    fetchData();
+  }, []);
 
   return (
     <div className={`flex flex-col min-h-screen bg-black text-white ${montserrat.className}`}>
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4 border-b border-neutral-800">
-        <h1 className="text-2xl font-bold text-white tracking-wide">
-          <span className="text-[#8FE649] drop-shadow-[0_0_8px_#8FE649]">TRACK</span>
-          FOLIO
+        <h1 className="text-2xl font-bold tracking-wide">
+          <span className="text-[#ffffff] drop-shadow-[0_0_8px_#8FE649]">TRACKFOLIO</span>
         </h1>
         <div className="flex items-center gap-6">
           <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
@@ -65,7 +123,7 @@ export default function Company() {
             <Search className="absolute right-3 top-2.5 w-4 h-4 text-neutral-500" />
           </div>
           <button className="md:hidden">
-            <Menu className="w-6 h-6 text-white" />
+            <Menu className="w-6 h-6" />
           </button>
         </div>
       </header>
@@ -89,7 +147,7 @@ export default function Company() {
                 <div
                   key={i}
                   className={`p-1 rounded-md hover:bg-[#8FE649] hover:text-black cursor-pointer ${
-                    i + 1 === 15 ? "bg-[#8FE649] text-black" : ""
+                    i + 1 === highlightDate ? "bg-[#8FE649] text-black" : ""
                   }`}
                 >
                   {i + 1}
@@ -98,131 +156,93 @@ export default function Company() {
             </div>
           </div>
 
-          {/* Upload Resume */}
-          <label className="mb-3 flex flex-col items-left justify-left border-2 border-dashed border-neutral-700 rounded-md p-4 text-neutral-400 cursor-pointer hover:border-[#8FE649] hover:text-[#8FE649] transition">
-            <input
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, setResume)}
-            />
-            {resume ? (
-              <span className="text-sm text-center">
-                {resume.name}
-                <a
-                  href={URL.createObjectURL(resume)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-[#8FE649] underline mt-1"
-                >
-                  Preview / Download
-                </a>
-              </span>
-            ) : (
-              "Upload Resume (PDF)"
-            )}
-          </label>
-
-          {/* Upload Job Description */}
-          <label className="mb-3 flex flex-col items-left justify-left border-2 border-dashed border-neutral-700 rounded-md p-4 text-neutral-400 cursor-pointer hover:border-[#8FE649] hover:text-[#8FE649] transition">
-            <input
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, setJobDesc)}
-            />
-            {jobDesc ? (
-              <span className="text-sm left">
-                {jobDesc.name}
-                <a
-                  href={URL.createObjectURL(jobDesc)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-[#8FE649] underline mt-1"
-                >
-                  Preview / Download
-                </a>
-              </span>
-            ) : (
-              "Upload Job Description (PDF)"
-            )}
-          </label>
-
-          {/* Checklist group */}
+          {/* Checklist */}
           <div className="mt-10 space-y-2">
             {checklist.map((item, idx) => (
               <label key={idx} className="flex items-center gap-2 text-neutral-300 text-sm">
                 <input
                   type="checkbox"
                   className="accent-[#8FE649]"
+                  checked={item.checked}
                   onChange={() => toggleCheckbox(idx)}
                 />
-                {item}
+                {item.label}
               </label>
             ))}
           </div>
-          <div>
-            <button
-              onClick={addCheckbox}
-              className="mt-3 bg-neutral-800 rounded-full p-1 hover:bg-[#8FE649] hover:text-black transition"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={addCheckbox}
+            className="mt-3 hover:bg-[#8FE649] hover:text-black transition"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </aside>
 
         {/* Right Content */}
         <section className="flex-1 p-10">
-          <h2 className={`text-3xl font-bold mb-4 text-[#ffffff] ${poppins.className}`}>
-            SAPLABs
-          </h2>
-          
+          <div className="flex items-center justify-between mb-4">
+            <h2 className={`text-3xl font-bold ${poppins.className}`}>{companyName}</h2>
+            <button
+              onClick={handleSave}
+              className="bg-[#8FE649] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#7ed43b] transition"
+            >
+              Save
+            </button>
+          </div>
 
-          {/* Futuristic Inputs */}
+          {/* Inputs */}
           <div className="space-y-4">
             <input
               type="text"
               placeholder="Job Title"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
               className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
             />
             <input
               type="text"
               placeholder="Job Description"
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
               className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
             />
-
-            {/* Notes section (Dynamic textareas) */}
-            {notes.map((note, idx) => (
-              <div key={idx} className="relative">
-                <textarea
-                  value={note}
-                  onChange={(e) => updateNote(e.target.value, idx)}
-                  placeholder="Notes..."
-                  rows={4}
-                  className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
-                ></textarea>
-                {idx > 0 && (
-                  <button
-                    onClick={() => removeNote(idx)}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-400"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="w-full text-sm text-neutral-200 file:bg-neutral-800 file:text-white file:rounded-md file:px-3 file:py-2 file:border file:border-neutral-700 file:cursor-pointer hover:file:bg-[#8FE649] hover:file:text-black transition"
+            />
           </div>
 
-          {/* Actions */}
+          {/* Notes */}
+          {notes.map((note, idx) => (
+            <div key={idx} className="relative mt-4">
+              <textarea
+                value={note}
+                onChange={(e) => updateNote(e.target.value, idx)}
+                placeholder="Notes..."
+                rows={4}
+                className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
+              />
+              {idx > 0 && (
+                <button
+                  onClick={() => removeNote(idx)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-400"
+                  aria-label="Delete note"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Add Note Button */}
           <div className="flex items-center gap-4 mt-6">
             <button
               onClick={addNote}
               className="bg-neutral-800 rounded-full p-2 hover:bg-[#8FE649] hover:text-black transition"
+              aria-label="Add note"
             >
               <Plus className="w-5 h-5" />
-            </button>
-            <button className="bg-[#8FE649] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#7ed43b] transition">
-              Save
             </button>
           </div>
         </section>

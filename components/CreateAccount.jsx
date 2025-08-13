@@ -1,166 +1,215 @@
 "use client";
-import { useState } from "react";
-import FormCard from "./FormCard"; // Adjust path if needed
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+// Helper to check if user is already logged in
+const isAuthenticated = () => {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("accessToken");
+};
 
 export default function CreateAccount() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter();
+
+  // Redirect authenticated users
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.replace("/home");
+    }
+  }, [router]);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState(null);
-  const green = "#8FE649";
+  const [loading, setLoading] = useState(false);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!fullName.trim()) {
+      setError("Full name cannot be empty");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-try {
-  const res = await fetch("/auth/register", {  // updated endpoint
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: fullName,     // key changed here
-      email: email,
-      password: password
-    }),
-  });
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
 
-  const data = await res.json();
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
 
-  if (!res.ok) {
-    setError(data.message || "Signup failed");
-    return;
-  }
+      const data = await res.json();
 
-  // Store tokens
-  localStorage.setItem("accessToken", data.accessToken);
-  localStorage.setItem("refreshToken", data.refreshToken);
+      if (!res.ok) {
+        setError(data?.message || "Signup failed. Please try again.");
+        setLoading(false);
+        return;
+      }
 
-  // Redirect to home page
-  router.push("/home");
+      // Save tokens safely
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
 
-} catch (err) {
-  setError("Network error: " + err.message);
-}
+      router.replace("/home");
+    } catch (err) {
+      console.error("Signup Error:", err);
+      setError("Network error: Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
-      <div className="min-h-screen relative flex flex-col items-center justify-center bg-black overflow-hidden">
-        <FormCard green={green}>
-          <h2 className="text-2xl font-montserrat text-center mb-4 text-white tracking-wide">
+    <div className="backdrop-blur-md min-h-screen flex flex-col sm:flex-row items-center justify-center">
+      {/* Hero Section */}
+      <div className="flex flex-col items-center justify-center flex-grow min-h-[60vh] sm:min-h-screen gap-8 sm:gap-12 relative z-10 px-4 sm:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="max-w-4xl text-center"
+        >
+          <p className="text-base sm:text-lg text-gray-400 mb-3">
+            Stop juggling spreadsheets and emails during
+          </p>
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-extrabold leading-tight">
+            Best <span className="text-[#8FE649]">placement</span>
+            <br />
+            organizing platform <br /> for your future.
+          </h2>
+
+          <p className="text-sm sm:text-lg text-gray-400 mt-3 leading-relaxed">
+            Stop juggling spreadsheets and emails during
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Form Section */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 1 }}
+        className="sm:w-1/2 flex justify-center items-center p-6 sm:p-12"
+      >
+        <div className="w-full max-w-md sm:max-w-lg bg-black/40 backdrop-blur-md border border-white/20 rounded-2xl p-8 sm:p-12 shadow-xl">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6 sm:mb-8">
             Create Account
           </h2>
 
+          <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
+              required
+              disabled={loading}
+            />
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
+              required
+              disabled={loading}
+            />
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649] font-medium"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649] font-medium"
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className={`bg-[#8FE649] text-white rounded-full py-3 mt-4 hover:shadow-lg hover:bg-[#8FE649] transition font-semibold ${
+                loading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+            >
+              {loading ? "Creating..." : "Create Account"}
+            </button>
+          </form>
+
           {error && (
-            <p className="text-red-500 text-center mb-4 font-poppins">{error}</p>
+            <p className="text-red-400 text-center mt-2 text-sm font-semibold">{error}</p>
           )}
 
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-4 py-3 rounded-md bg-black text-sm mb-4 text-white placeholder-gray-500 transition-all duration-300"
-            style={{ border: `1px solid ${green}44` }}
-            onFocus={(e) => (e.target.style.border = `1px solid ${green}`)}
-            onBlur={(e) => (e.target.style.border = `1px solid ${green}44`)}
-          />
-
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-md bg-black text-sm mb-4 text-white placeholder-gray-500 transition-all duration-300"
-            style={{ border: `1px solid ${green}44` }}
-            onFocus={(e) => (e.target.style.border = `1px solid ${green}`)}
-            onBlur={(e) => (e.target.style.border = `1px solid ${green}44`)}
-          />
-
-          <div className="relative mb-4">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-md bg-black text-sm text-white placeholder-gray-500 transition-all duration-300"
-              style={{ border: `1px solid ${green}44` }}
-              onFocus={(e) => (e.target.style.border = `1px solid ${green}`)}
-              onBlur={(e) => (e.target.style.border = `1px solid ${green}44`)}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-xs text-gray-400"
-              onMouseEnter={(e) => (e.target.style.color = green)}
-              onMouseLeave={(e) => (e.target.style.color = "#9ca3af")}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-
-          <div className="relative mb-4">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-md bg-black text-sm text-white placeholder-gray-500 transition-all duration-300"
-              style={{ border: `1px solid ${green}44` }}
-              onFocus={(e) => (e.target.style.border = `1px solid ${green}`)}
-              onBlur={(e) => (e.target.style.border = `1px solid ${green}44`)}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-3 text-xs text-gray-400"
-              onMouseEnter={(e) => (e.target.style.color = green)}
-              onMouseLeave={(e) => (e.target.style.color = "#9ca3af")}
-            >
-              {showConfirmPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-
-          <div className="flex justify-center">
-            <button
-              onClick={handleSubmit}
-              className="px-12 py-2 rounded-full text-white font-montserrate mb-3 transition-all duration-300"
-              style={{ background: green, boxShadow: `0 0 8px ${green}` }}
-              onMouseEnter={(e) => (e.target.style.boxShadow = `0 0 20px ${green}`)}
-              onMouseLeave={(e) => (e.target.style.boxShadow = `0 0 8px ${green}`)}
-            >
-              Create Account
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-400 text-center mb-4 font-poppins">
-            By creating an account, you agree to the{" "}
-            <a href="#" style={{ color: green }} className="hover:underline">
-              Terms of Use
-            </a>{" "}
-            and{" "}
-            <a href="#" style={{ color: green }} className="hover:underline">
-              Privacy Policy
-            </a>.
+          <p className="text-xs sm:text-sm text-gray-400 mt-6 text-center">
+            By continuing, you agree to the{" "}
+            <span className="text-green-400 cursor-pointer hover:underline">Terms of Use</span> and{" "}
+            <span className="text-green-400 cursor-pointer hover:underline">Privacy Policy</span>.
           </p>
-          <p className="text-center text-sm mb-3 font-poppins text-gray-300">
+
+          <p className="text-center text-gray-300 text-sm mt-4">
             Already have an account?{" "}
-            <a href="/" className="hover:underline" style={{ color: green }}>
-              Login
-            </a>
+            <Link href="/login">
+              <span className="text-green-400 cursor-pointer hover:underline">Login</span>
+            </Link>
           </p>
-        </FormCard>
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

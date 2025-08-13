@@ -1,18 +1,27 @@
+"use client";
 import React, { createContext, useContext, useState } from "react";
+import Cookies from "js-cookie";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(() => localStorage.getItem("accessToken") || null);
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem("refreshToken") || null);
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem("user_email") || null);
+  const [accessToken, setAccessToken] = useState(() => Cookies.get("accessToken") || null);
+  const [refreshToken, setRefreshToken] = useState(() => Cookies.get("refreshToken") || null);
+  const [userEmail, setUserEmail] = useState(() => Cookies.get("user_email") || null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const saveTokens = ({ accessToken, refreshToken, email }) => {
+    // LocalStorage
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user_email", email);
+
+    // Cookies (so middleware can read)
+    Cookies.set("accessToken", accessToken);
+    Cookies.set("refreshToken", refreshToken);
+    Cookies.set("user_email", email);
+
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
     setUserEmail(email);
@@ -22,12 +31,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user_email");
+
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
+    Cookies.remove("user_email");
+
     setAccessToken(null);
     setRefreshToken(null);
     setUserEmail(null);
   };
 
-  // login function as you already have
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
@@ -39,7 +52,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const res = await fetch("/auth/login", {
+      const res = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -68,10 +81,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // New: refreshAccessToken inside provider to access state and functions
   const refreshAccessToken = async () => {
     try {
-      const res = await fetch("/auth/new-access-token", {
+      const res = await fetch("http://localhost:8080/auth/new-access-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -95,7 +107,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // New: authFetch wrapper that retries with refreshed token
   const authFetch = async (url, options = {}) => {
     options.headers = {
       ...(options.headers || {}),

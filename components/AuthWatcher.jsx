@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext"; // Adjust the path as needed
+import { useAuth } from "../contexts/AuthContext"; // Adjust path
 import { useRouter, usePathname } from "next/navigation";
 
 export default function AuthWatcher() {
@@ -9,12 +9,14 @@ export default function AuthWatcher() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Public pages that don't need auth
+  const publicPaths = ["/","/home", "/company", "/about", "/contact", "/login", "/register", "/create-account"];
+
   useEffect(() => {
-    // If no accessToken and user is NOT already on login page, redirect to login
-    if (!accessToken && pathname !== "/login") {
+    if (!accessToken && !publicPaths.includes(pathname)) {
       router.push("/login");
     }
   }, [accessToken, pathname, router]);
 
-  return null; // This component doesn't render anything
+  return null;
 }

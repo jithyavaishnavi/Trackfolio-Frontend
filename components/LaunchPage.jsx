@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LaunchPage() {
   const [showPopup, setShowPopup] = useState(false);
@@ -12,6 +13,18 @@ export default function LaunchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  // Auth guard: redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      router.push("/home");
+    }
+  }, [router]);
+
+  // Show popup after 2 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowPopup(true);
@@ -25,36 +38,35 @@ export default function LaunchPage() {
     setError("");
 
     try {
-      const res = await fetch("/auth/login", {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) {
-        // Extract error message from backend response
-        const errData = await res.json();
-        setError(errData.message || "Login failed");
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setError("Server error. Please try later.");
         setLoading(false);
         return;
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        setLoading(false);
+        return;
+      }
 
-      // You get accessToken and refreshToken here
-      // For now, just log or store them as you want
-      console.log("Access Token:", data.accessToken);
-      console.log("Refresh Token:", data.refreshToken);
-
-      // TODO: store tokens securely (httpOnly cookie, context, or secure storage)
-      // Example (in-memory for now):
-      // localStorage.setItem("accessToken", data.accessToken);
-      // localStorage.setItem("refreshToken", data.refreshToken);
+      // Save tokens
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("user_email", email);
 
       setLoading(false);
-      setShowPopup(false); // close popup on success
-
-      // Optionally redirect or update UI for logged-in user
+      setShowPopup(false);
+      router.push("/home"); // Redirect to home after login
 
     } catch (err) {
       setError("Network error. Please try again.");
@@ -66,7 +78,7 @@ export default function LaunchPage() {
     <div
       className="min-h-screen flex flex-col"
       style={{
-        backgroundImage: `url('https://i.pinimg.com/1200x/68/41/56/6841566e3471ff089e2b2389ae208a01.jpg')`,
+        backgroundImage: `url('/bg.jpg')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -74,24 +86,39 @@ export default function LaunchPage() {
       }}
     >
       <div className="bg-black/70 backdrop-blur-md min-h-screen flex flex-col text-white">
-        <header className="flex items-center justify-between px-8 py-4">
-          <h1 className="text-2xl font-bold tracking-wide text-white">
-            <span style={{ color: "white" }}>TRACK</span>FOLIO
-          </h1>
+        {/* Navbar */}
+        <header className="flex items-center justify-between px-8 py-4 mt-4">
+          <Link href="/" className="text-[#ffffff] drop-shadow-[0_0_8px_#8FE649] text-2xl font-bold tracking-wide">
+            TRACKFOLIO.
+          </Link>
 
           <nav className="flex flex-wrap justify-between items-center gap-6">
-            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-gray-300 text-sm sm:text-base">
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/">Home</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/about">About</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/contact">Contact Us</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/whats-new">What's New?</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/contact">Feedback</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/login">Login</Link></li>
-              <li className="hover:text-[#8FE649] cursor-pointer"><Link href="/create-account">Create Account</Link></li>
+            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-gray-300 text-sm sm:text-base mt-4 ">
+              <li className="hover:text-[#8FE649] cursor-pointer">
+                <Link href="/">Home</Link>
+              </li>
+              <li className="hover:text-[#8FE649] cursor-pointer">
+                <Link href="/about">About</Link>
+              </li>
+              <li className="hover:text-[#8FE649] cursor-pointer">
+                <Link href="/contact">Contact Us</Link>
+              </li>
+              <li className="hover:text-[#8FE649] cursor-pointer">
+                <Link href="/whats-new">What's New?</Link>
+              </li>
+              <li className="hover:text-[#8FE649] cursor-pointer">
+                <Link href="/contact">Feedback</Link>
+              </li>
             </ul>
           </nav>
+          <Link href="/login">
+            <button className="h-10 flex justify-center items-center bg-transparent font-semibold text-white border border-white rounded-full px-6 sm:px-8 py-2 sm:py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
+              LogIn
+            </button>
+          </Link>
         </header>
 
+        {/* Hero Section */}
         <div className="flex flex-col items-center justify-center flex-grow min-h-[60vh] sm:min-h-screen gap-8 sm:gap-12 relative z-10 px-4 sm:px-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -109,12 +136,14 @@ export default function LaunchPage() {
             </h2>
 
             <p className="text-sm sm:text-lg text-gray-400 mt-3 leading-relaxed">
-              Stop juggling spreadsheets and emails during<br /> 
+              Stop juggling spreadsheets and emails during<br />
               Stop juggling sphkjs ncflk ncla kncnaskc
             </p>
-            <button className="mt-6 bg-[#8FE649] font-semibold text-white rounded-full px-6 sm:px-8 py-2 sm:py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
-              <Link href="/create-account">Get Started</Link>
-            </button>
+            <Link href="/create-account">
+              <button className="mt-6 bg-[#8FE649] font-semibold text-white rounded-full px-6 sm:px-8 py-2 sm:py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
+                Get Started
+              </button>
+            </Link>
           </motion.div>
         </div>
 
@@ -194,9 +223,11 @@ export default function LaunchPage() {
               <p className="text-center text-gray-400 text-xs sm:text-sm">
                 New to our community
               </p>
-              <button className="border border-gray-400 rounded-full py-2 sm:py-3 w-full mt-3 hover:border-[#8FE649] text-base sm:text-lg text-white">
-                <Link href="/create-account">Create an account</Link>
-              </button>
+              <Link href="/create-account">
+                <button className="border border-gray-400 rounded-full py-2 sm:py-3 w-full mt-3 hover:border-[#8FE649] text-base sm:text-lg text-white">
+                  Create Account
+                </button>
+              </Link>
             </motion.div>
           </div>
         )}

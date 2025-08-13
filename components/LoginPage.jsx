@@ -2,66 +2,179 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../contexts/AuthContext"; // use your custom hook
+import Link from "next/link";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, error, loading } = useAuth();
+  const { login, error: authError, loading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Email format regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Password strength regex: min 6 chars, at least 1 uppercase, 1 lowercase, 1 number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError(null);
 
-    const success = await login(email, password);
-    if (success) {
-      router.push("/home");
+    // Validation checks
+    if (!email.trim() || !password.trim()) {
+      setError("Email and password cannot be empty.");
+      return;
+    }
+
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Password must be at least 6 characters long and include uppercase, lowercase, and a number."
+      );
+      return;
+    }
+
+    try {
+      const success = await login(email, password);
+      if (success) router.replace("/home");
+      else setError(authError || "Login failed. Please try again.");
+    } catch (err) {
+      setError("Network error: " + err.message);
     }
   }
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 md:px-12 flex flex-col relative overflow-hidden">
-      <div className="fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm p-4 sm:p-6">
+    <div className="backdrop-blur-md min-h-screen flex flex-col sm:flex-row items-center justify-center px-4 sm:px-8">
+      {/* Hero Section */}
+      <div className="flex flex-col items-center justify-center flex-grow min-h-[60vh] sm:min-h-screen gap-6 sm:gap-12 relative z-10 text-center">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative bg-black/30 backdrop-blur-lg p-6 sm:p-8 md:p-12 rounded-2xl border border-white/20 w-full max-w-md sm:max-w-lg md:max-w-xl shadow-lg"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-4xl"
         >
-          <h3 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 text-white">
-            Sign in
-          </h3>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
+          <p className="text-base sm:text-lg text-gray-400 mb-2 sm:mb-3">
+            Organize your placements with ease
+          </p>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-extrabold leading-tight text-white">
+            Best <span className="text-[#8FE649]">placement</span> management
+            platform for your career.
+          </h2>
+          <p className="text-sm sm:text-lg text-gray-400 mt-3 leading-relaxed">
+            Stop juggling spreadsheets and emails during your placement journey
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Form Section */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="sm:w-1/2 flex justify-center items-center p-6 sm:p-12 w-full"
+      >
+        <div className="w-full max-w-md sm:max-w-lg bg-black/60 backdrop-blur-md border border-white/20 rounded-2xl p-8 sm:p-12 shadow-lg">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6 sm:mb-8">
+            Login
+          </h2>
+
+          <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handleSubmit}>
+            {/* Email input */}
+            <label htmlFor="email" className="sr-only">
+              Email address
+            </label>
             <input
-              type="text"
-              placeholder="Enter valid Gmail"
+              id="email"
+              type="email"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-transparent border border-white hover:border-[#8FE649] rounded px-4 sm:px-5 py-2 sm:py-3 focus:outline-none text-base sm:text-lg text-white placeholder-gray-300"
-              aria-label="Enter valid Gmail"
+              className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
+              required
+              disabled={loading}
+              aria-invalid={!!error}
+              aria-describedby="email-error"
             />
-            <input
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-transparent border border-white hover:border-[#8FE649] rounded px-4 sm:px-5 py-2 sm:py-3 focus:outline-none text-base sm:text-lg text-white placeholder-gray-300"
-              aria-label="Password"
-            />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            {/* Password input */}
+            <label htmlFor="password" className="sr-only">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 sm:px-5 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
+                required
+                disabled={loading}
+                aria-invalid={!!error}
+                aria-describedby="password-error"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649] font-medium"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className={`${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              } bg-[#8FE649] text-white text-semibold rounded-full py-2 sm:py-3 mt-3 hover:bg-white hover:text-[#8FE649] sm:text-lg font-medium`}
+              className={`bg-[#8FE649] text-white rounded-full py-3 mt-4 hover:shadow-lg transition font-semibold ${
+                loading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             >
-              {loading ? "Logging in..." : "LOGIN"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
-        </motion.div>
-      </div>
+
+          {/* Error message */}
+          {(error || authError) && (
+            <p
+              id="email-error"
+              className="text-red-400 text-center mt-2 text-sm font-semibold"
+            >
+              {error || authError}
+            </p>
+          )}
+
+          {/* Terms and sign-up */}
+          <p className="text-xs sm:text-sm text-gray-400 mt-6 text-center">
+            By continuing, you agree to the{" "}
+            <span className="text-green-400 cursor-pointer hover:underline">
+              Terms of Use
+            </span>{" "}
+            and{" "}
+            <span className="text-green-400 cursor-pointer hover:underline">
+              Privacy Policy
+            </span>.
+          </p>
+
+          <p className="text-center text-gray-300 text-sm mt-4">
+            Don't have an account?{" "}
+            <Link href="/create-account">
+              <span className="text-green-400 cursor-pointer hover:underline">
+                Sign up
+              </span>
+            </Link>
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }
