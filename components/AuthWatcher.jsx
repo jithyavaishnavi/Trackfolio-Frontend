@@ -10,7 +10,7 @@ export default function AuthWatcher() {
   const pathname = usePathname();
 
   // Public pages that don't need auth
-  const publicPaths = ["/","/home", "/company", "/about", "/contact", "/login", "/register", "/create-account"];
+  const publicPaths = ["/","/home", "/drivedetails", "/about", "/contact", "/login", "/register", "/create-account","/nextup","/upcoming","/completed"];
 
   useEffect(() => {
     if (!accessToken && !publicPaths.includes(pathname)) {

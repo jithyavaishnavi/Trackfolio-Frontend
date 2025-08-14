@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/drives";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/drives/save";
 
 export default function Dashboard() {
   const green = "#8FE649";
@@ -118,41 +118,7 @@ export default function Dashboard() {
         }}
       >
         <div className="bg-black/70 backdrop-blur-md min-h-screen flex flex-col text-white">
-          {/* Header */}
-          <header className="flex items-center justify-between px-8 py-4 border-b border-neutral-800">
-            <Link
-              href="/home"
-              className="text-2xl font-bold tracking-wide text-white drop-shadow-[0_0_8px_#8FE649]"
-            >
-              TRACKFOLIO.
-            </Link>
-            <div className="flex items-center gap-6">
-              <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
-                <a href="#" className="hover:text-[#8FE649] transition">Previous</a>
-                <a href="#" className="hover:text-[#8FE649] transition">Today</a>
-                <a href="#" className="hover:text-[#8FE649] transition">Future</a>
-              </nav>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="rounded-full bg-neutral-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8FE649] placeholder-neutral-500"
-                  aria-label="Search companies"
-                />
-                <Search className="absolute right-3 top-2.5 w-4 h-4 text-neutral-500" />
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 px-3 py-2 bg-transparent-600 hover:bg-[#8FE649] rounded-md transition"
-              >
-                <LogOut size={16} />
-              </button>
-              <button className="md:hidden" aria-label="Open menu">
-                <Menu className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </header>
-
+          
           {/* Hero */}
           <section className="text-center mt-50 relative z-10 px-4">
             <h1 className="text-5xl md:text-6xl font-extrabold mb-4 leading-tight bg-gradient-to-r from-green-300 to-lime-500 bg-clip-text text-transparent">

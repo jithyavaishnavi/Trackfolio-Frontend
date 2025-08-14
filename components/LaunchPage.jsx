@@ -14,15 +14,50 @@ export default function LaunchPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/auth/login";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-  // Auth guard: redirect if already logged in
+  // Auth guard: validate tokens on mount
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      router.push("/home");
-    }
-  }, [router]);
+    const validateAndRefreshToken = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!accessToken || !refreshToken) {
+        return; // No tokens, stay on launch page
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!res.ok) {
+          // Refresh failed — clear tokens
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user_email");
+          return;
+        }
+
+        const data = await res.json();
+        // Save new tokens
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+
+        // Redirect to home
+        router.push("/home");
+      } catch (err) {
+        console.error("Token refresh error:", err);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user_email");
+      }
+    };
+
+    validateAndRefreshToken();
+  }, [router, API_URL]);
 
   // Show popup after 2 seconds
   useEffect(() => {
@@ -66,8 +101,7 @@ export default function LaunchPage() {
 
       setLoading(false);
       setShowPopup(false);
-      router.push("/home"); // Redirect to home after login
-
+      router.push("/home");
     } catch (err) {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -93,7 +127,7 @@ export default function LaunchPage() {
           </Link>
 
           <nav className="flex flex-wrap justify-between items-center gap-6">
-            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-gray-300 text-sm sm:text-base mt-4 ">
+            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-gray-300 text-sm sm:text-base mt-4">
               <li className="hover:text-[#8FE649] cursor-pointer">
                 <Link href="/">Home</Link>
               </li>
