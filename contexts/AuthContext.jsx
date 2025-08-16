@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState } from "react";
 import Cookies from "js-cookie";
 
+const SPRING_BOOT_BASE_URL = "http://localhost:8080";
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -18,9 +20,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user_email", email);
 
     // Cookies (so middleware can read)
-    Cookies.set("accessToken", accessToken);
-    Cookies.set("refreshToken", refreshToken);
-    Cookies.set("user_email", email);
+    Cookies.set("accessToken", accessToken, { expires: 1/24, secure: true }); // 1 hour expiry
+    Cookies.set("refreshToken", refreshToken, { expires: 7, secure: true }); // 7 days expiry
+    Cookies.set("user_email", email, { expires: 7, secure: true });
 
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
@@ -52,7 +54,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/auth/login", {
+      const res = await fetch(`${SPRING_BOOT_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -83,7 +85,7 @@ export function AuthProvider({ children }) {
 
   const refreshAccessToken = async () => {
     try {
-      const res = await fetch("http://localhost:8080/auth/new-access-token", {
+      const res = await fetch(`${SPRING_BOOT_BASE_URL}/auth/new-access-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -119,8 +121,13 @@ export function AuthProvider({ children }) {
     if (res.status === 401) {
       try {
         const newAccessToken = await refreshAccessToken();
-        options.headers.Authorization = `Bearer ${newAccessToken}`;
-        res = await fetch(url, options);
+        if (newAccessToken) {
+          options.headers.Authorization = `Bearer ${newAccessToken}`;
+          res = await fetch(url, options);
+        } else {
+          // Refresh failed, no need to retry
+          return null;
+        }
       } catch (err) {
         setError(err.message);
         return null;

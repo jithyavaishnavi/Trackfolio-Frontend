@@ -17,13 +17,13 @@ export default function NavBarMain({ handleLogout }) {
       <div className="flex items-center gap-6">
         {/* Navigation */}
         <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
-          <a href="#" className="hover:text-[#8FE649] transition">
+          <a href="/completed" className="hover:text-[#8FE649] transition">
             Previous
           </a>
-          <a href="#" className="hover:text-[#8FE649] transition">
+          <a href="/nextup" className="hover:text-[#8FE649] transition">
             Today
           </a>
-          <a href="#" className="hover:text-[#8FE649] transition">
+          <a href="/upcoming" className="hover:text-[#8FE649] transition">
             Future
           </a>
         </nav>
