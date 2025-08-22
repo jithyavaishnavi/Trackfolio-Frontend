@@ -1,226 +1,165 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Montserrat, Poppins } from "next/font/google";
-import { Menu, Plus, Search, Trash2 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
+import { Plus, Trash2 } from "lucide-react";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "600", "700"] });
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
-export default function Company({ companyId }) {
-  const [resume, setResume] = useState(null);
-  const [notes, setNotes] = useState([""]);
-  const [checklist, setChecklist] = useState([]);
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+export default function Company({ params }) {
+  const driveId = params?.driveId;
+  const searchParams = useSearchParams();
+  const previousTab = searchParams.get("from") || "upcoming";
+  const router = useRouter();
+
   const [companyName, setCompanyName] = useState("");
-  const [highlightDate, setHighlightDate] = useState(new Date().getDate());
+  const [driveDateTime, setDriveDateTime] = useState("");
+  const [notes, setNotes] = useState([""]);
+  const [links, setLinks] = useState([""]);
 
-  // File handler
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) setResume(e.target.files[0]);
-  };
+  // Fetch drive data
+  useEffect(() => {
+    if (!driveId) return;
+    (async () => {
+      try {
+        const res = await fetch(`http://localhost:8080/api/drives/${driveId}`);
+        if (!res.ok) throw new Error("Failed to fetch drive data");
+        const data = await res.json();
 
-  // Notes actions
+        setCompanyName(data.companyName || "");
+        setDriveDateTime(data.driveDateTime || "");
+        setNotes(Array.isArray(data.notes) ? data.notes : []);
+        setLinks(Array.isArray(data.links) ? data.links : []);
+      } catch (err) {
+        console.error(err);
+        setCompanyName("");
+        setDriveDateTime("");
+        setNotes([""]);
+        setLinks([""]);
+      }
+    })();
+  }, [driveId]);
+
+  // Note actions
   const addNote = () => setNotes([...notes, ""]);
   const updateNote = (value, index) => {
     const updated = [...notes];
     updated[index] = value;
     setNotes(updated);
   };
-  const removeNote = (index) => setNotes(notes.filter((_, idx) => idx !== index));
+  const removeNote = (index) => setNotes(notes.filter((_, i) => i !== index));
 
-  // Checklist actions
-  const addCheckbox = () => {
-    const label = prompt("Enter checkbox label:");
-    if (label && label.trim() !== "")
-      setChecklist([...checklist, { label: label.trim(), checked: false }]);
+  // Link actions
+  const addLink = () => setLinks([...links, ""]);
+  const updateLink = (value, index) => {
+    const updated = [...links];
+    updated[index] = value;
+    setLinks(updated);
   };
+  const removeLink = (index) => setLinks(links.filter((_, i) => i !== index));
 
-  const toggleCheckbox = (index) => {
-    const updated = [...checklist];
-    updated[index].checked = !updated[index].checked;
-    setChecklist(updated);
-  };
-
-  // Save data
+  // Save changes with validation
   const handleSave = async () => {
-    try {
-      const formData = new FormData();
-      formData.append("jobTitle", jobTitle);
-      formData.append("jobDescription", jobDescription);
-      formData.append("notes", JSON.stringify(notes));
-      formData.append("checklist", JSON.stringify(checklist));
-      if (resume) formData.append("resume", resume);
+    if (!companyName.trim()) {
+      alert("Company Name cannot be empty");
+      return;
+    }
 
-      const res = await fetch(`http://localhost:5000/api/company/${companyId}`, {
-        method: "PUT",
-        body: formData,
+    try {
+      const payload = {
+        id: driveId,
+        companyName,
+        driveDateTime,
+        links: links.filter((l) => l.trim() !== ""),
+        notes: notes.filter((n) => n.trim() !== ""),
+      };
+
+      const res = await fetch("http://localhost:8080/api/drives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to save");
-      const data = await res.json();
-      console.log("Save successful:", data);
-      alert("Data saved successfully!");
+      if (!res.ok) throw new Error("Save failed");
+
+      router.push(`/home?tab=${previousTab}`);
     } catch (err) {
-      console.error("Error saving data:", err);
-      alert("Error saving data. Check console for details.");
+      console.error("Error saving:", err);
+      alert("Failed to save. Check console.");
     }
   };
-
-  // Fetch company data dynamically
-  useEffect(() => {
-    if (!companyId) return;
-
-    async function fetchData() {
-      try {
-        const res = await fetch(`http://localhost:5000/api/company/${companyId}`);
-        if (!res.ok) throw new Error("Failed to fetch company data");
-        const data = await res.json();
-
-        setCompanyName(data.companyName || "");
-        setJobTitle(data.jobTitle || "");
-        setJobDescription(data.jobDescription || "");
-        setHighlightDate(data.highlightDate || new Date().getDate());
-
-        setNotes(
-          data.notes
-            ? Array.isArray(data.notes)
-              ? data.notes
-              : JSON.parse(data.notes)
-            : [""]
-        );
-
-        setChecklist(
-          data.checklist
-            ? Array.isArray(data.checklist)
-              ? data.checklist.map((c) =>
-                  typeof c === "string" ? { label: c, checked: false } : c
-                )
-              : JSON.parse(data.checklist)
-            : []
-        );
-      } catch (err) {
-        console.error("Error fetching company data:", err);
-        setChecklist([]);
-        setNotes([""]);
-        setCompanyName("");
-      }
-    }
-
-    fetchData();
-  }, [companyId]);
 
   return (
     <div className={`flex flex-col min-h-screen bg-black text-white ${montserrat.className}`}>
-      {/* Main Content */}
-      <main className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="w-80 bg-neutral-900 border-r border-neutral-800 p-6 flex flex-col">
-          {/* Calendar */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between text-neutral-300 text-sm mb-2">
-              <button>&lt;</button>
-              <span className="font-semibold">February 2021</span>
-              <button>&gt;</button>
-            </div>
-            <div className="grid grid-cols-7 gap-2 text-center text-xs text-neutral-400">
-              {["M", "T", "W", "T", "F", "S", "S"].map((day) => (
-                <div key={day}>{day}</div>
-              ))}
-              {Array.from({ length: 28 }, (_, i) => (
-                <div
-                  key={i}
-                  className={`p-1 rounded-md hover:bg-[#8FE649] hover:text-black cursor-pointer ${
-                    i + 1 === highlightDate ? "bg-[#8FE649] text-black" : ""
-                  }`}
-                >
-                  {i + 1}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Checklist */}
-          <div className="mt-10 space-y-2">
-            {checklist.map((item, idx) => (
-              <label key={idx} className="flex items-center gap-2 text-neutral-300 text-sm">
-                <input
-                  type="checkbox"
-                  className="accent-[#8FE649]"
-                  checked={item.checked}
-                  onChange={() => toggleCheckbox(idx)}
-                />
-                {item.label}
-              </label>
-            ))}
-          </div>
+      <main className="flex flex-1 p-10 flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h2 className={`text-3xl font-bold ${poppins.className}`}>{companyName || "Edit Drive"}</h2>
           <button
-            onClick={addCheckbox}
-            className="mt-3 hover:bg-[#8FE649] hover:text-black transition"
+            onClick={handleSave}
+            className="bg-[#8FE649] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#7ed43b] transition"
           >
-            <Plus className="w-5 h-5" />
+            Save
           </button>
-        </aside>
+        </div>
 
-        {/* Right Content */}
-        <section className="flex-1 p-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className={`text-3xl font-bold ${poppins.className}`}>{companyName}</h2>
-            <button
-              onClick={handleSave}
-              className="bg-[#8FE649] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#7ed43b] transition"
-            >
-              Save
-            </button>
-          </div>
+        <input
+          type="text"
+          placeholder="Company Name"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:outline-none"
+        />
 
-          {/* Inputs */}
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Job Title"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
-            />
-            <input
-              type="text"
-              placeholder="Job Description"
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner"
-            />
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="w-full text-sm text-neutral-200 file:bg-neutral-800 file:text-white file:rounded-md file:px-3 file:py-2 file:border file:border-neutral-700 file:cursor-pointer hover:file:bg-[#8FE649] hover:file:text-black transition-all"
-            />
-          </div>
+        <input
+          type="datetime-local"
+          value={driveDateTime}
+          onChange={(e) => setDriveDateTime(e.target.value)}
+          className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:outline-none"
+        />
 
-          {/* Notes */}
-          <div className="mt-6 space-y-2">
-            {notes.map((note, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <textarea
-                  value={note}
-                  onChange={(e) => updateNote(e.target.value, idx)}
-                  className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:border-[#8FE649] focus:outline-none transition-all shadow-inner resize-none"
-                  rows={2}
-                />
-                <button onClick={() => removeNote(idx)}>
-                  <Trash2 className="w-5 h-5 text-red-500" />
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={addNote}
-              className="flex items-center gap-2 text-[#8FE649] font-semibold hover:underline"
-            >
-              <Plus className="w-5 h-5" /> Add Note
-            </button>
-          </div>
-        </section>
+        {/* Links */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Links</h3>
+          {links.map((link, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={link}
+                onChange={(e) => updateLink(e.target.value, idx)}
+                placeholder="https://example.com"
+                className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:outline-none"
+              />
+              <button onClick={() => removeLink(idx)}>
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </button>
+            </div>
+          ))}
+          <button onClick={addLink} className="flex items-center gap-2 text-[#8FE649] hover:underline">
+            <Plus className="w-5 h-5" /> Add Link
+          </button>
+        </div>
+
+        {/* Notes */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Notes</h3>
+          {notes.map((note, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <textarea
+                value={note}
+                onChange={(e) => updateNote(e.target.value, idx)}
+                className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-sm text-neutral-200 border border-neutral-700 focus:ring-2 focus:ring-[#8FE649] focus:outline-none resize-none"
+                rows={2}
+              />
+              <button onClick={() => removeNote(idx)}>
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </button>
+            </div>
+          ))}
+          <button onClick={addNote} className="flex items-center gap-2 text-[#8FE649] hover:underline">
+            <Plus className="w-5 h-5" /> Add Note
+          </button>
+        </div>
       </main>
     </div>
   );
