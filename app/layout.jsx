@@ -1,8 +1,7 @@
-"use client";
-
+// layout.jsx
 import "./globals.css";
-import { AuthProvider } from "../contexts/AuthContext"; // Adjust path as needed
-import AuthWatcher from "../components/AuthWatcher"; // Adjust path as needed
+import { AuthProvider } from "../contexts/AuthContext"; // Named import
+import AuthWatcher from "../components/AuthWatcher";
 
 export default function RootLayout({ children }) {
   return (
