@@ -34,13 +34,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (!passwordRegex.test(password)) {
-      setError(
-        "Password must be at least 6 characters long and include uppercase, lowercase, and a number."
-      );
-      return;
-    }
-
     setLoading(true);
 
     try {

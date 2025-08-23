@@ -3,10 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
-
-const getAuthToken = () => {
-  return localStorage.getItem("authToken"); // store token securely (or via cookies)
-};
+import { useAuth } from "../contexts/AuthContext";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/upcoming";
@@ -14,6 +11,7 @@ const API_URL =
 export default function Upcoming() {
   const router = useRouter();
   const greenGradient = "linear-gradient(135deg, #8fe649, #4caf50)";
+  const { authFetch, logout } = useAuth();
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,23 +20,12 @@ export default function Upcoming() {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
 
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+      const res = await authFetch(API_URL, { method: "GET" });
 
-      const res = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        localStorage.removeItem("authToken");
+      if (!res) {
+        // authFetch returns null if refresh fails
+        logout();
         router.push("/login");
         return;
       }
@@ -51,28 +38,26 @@ export default function Upcoming() {
 
       const data = await res.json();
 
-      const formattedData = data.map((drive) => {
-        const dateObj = new Date(drive.driveDatetime);
-        if (isNaN(dateObj.getTime())) {
-          return null;
-        }
-        return {
-          id: drive.id,
-          company: drive.companyName,
-          role: drive.role,
-          date: dateObj.toLocaleDateString(),
-          time: dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-      }).filter(Boolean);
+      const formattedData = data
+        .map((drive) => {
+          const dateObj = new Date(drive.driveDatetime);
+          if (isNaN(dateObj.getTime())) return null;
+          return {
+            id: drive.id,
+            company: drive.companyName,
+            role: drive.role,
+            date: dateObj.toLocaleDateString(),
+            time: dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        })
+        .filter(Boolean);
 
       setCompanies(formattedData);
       setError("");
     } catch (err) {
       console.error(err);
       setCompanies([]);
-      if (!error) {
-        setError("Could not load data. Please try again later.");
-      }
+      if (!error) setError("Could not load data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -112,9 +97,7 @@ export default function Upcoming() {
                 >
                   {drive.company?.[0] || "?"}
                 </div>
-                <h3 className="text-2xl font-bold text-green-300">
-                  {drive.company}
-                </h3>
+                <h3 className="text-2xl font-bold text-green-300">{drive.company}</h3>
                 <div className="text-gray-300 space-y-2 mt-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-gray-400" />

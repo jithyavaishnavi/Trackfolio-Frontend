@@ -3,16 +3,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
-
-const getAuthToken = () => {
-  return "your-secure-access-token"; // TODO: Replace with real token logic (from localStorage or cookies)
-};
+import { useAuth } from "../contexts/AuthContext"; // import AuthContext
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/completed";
 
 export default function Completed() {
   const router = useRouter();
+  const { authFetch } = useAuth(); // get authFetch from context
   const greenGradient = "linear-gradient(135deg, #8fe649, #4caf50)";
 
   const [companies, setCompanies] = useState([]);
@@ -23,17 +21,10 @@ export default function Completed() {
     const fetchCompanies = async () => {
       try {
         setLoading(true);
-        const token = getAuthToken();
-        const res = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await authFetch(API_URL, { method: "GET" });
 
-        if (res.status === 401) {
-          setError("Session expired. Please log in again.");
+        if (!res) {
+          setError("Session expired or unauthorized.");
           router.push("/login");
           return;
         }
@@ -41,7 +32,7 @@ export default function Completed() {
         if (!res.ok) {
           const errorData = await res.json();
           setError(errorData.message || "Failed to fetch completed drives.");
-          throw new Error("API call failed.");
+          return;
         }
 
         const data = await res.json();
@@ -62,16 +53,14 @@ export default function Completed() {
       } catch (err) {
         console.error(err);
         setCompanies([]);
-        if (!error) {
-          setError("Could not load data. Please try again later.");
-        }
+        setError("Could not load data. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchCompanies();
-  }, [router, error]);
+  }, [router, authFetch]);
 
   const handleViewDetails = (id) => {
     router.push(`/company/${id}`);

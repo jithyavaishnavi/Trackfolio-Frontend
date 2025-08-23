@@ -3,72 +3,63 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
-
-const getAuthToken = () => {
-  return localStorage.getItem("token") || "your-secure-access-token";
-};
+import { useAuth } from "../contexts/AuthContext";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8080/api/drives/nextup";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/nextup";
 
 export default function NextUpCompanies() {
   const router = useRouter();
   const greenGradient = "linear-gradient(135deg, #8fe649, #4caf50)";
+  const { authFetch, logout } = useAuth();
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setLoading(true);
-        const token = getAuthToken();
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
 
-        const res = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const res = await authFetch(API_URL, { method: "GET" });
 
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          router.push("/login");
-          return;
-        }
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          setError(errorData.message || "Failed to fetch next up drives.");
-          throw new Error("API call failed.");
-        }
-
-        const data = await res.json();
-        const formattedData = data.map((drive) => ({
-          id: drive.id,
-          company: drive.companyName,
-          role: drive.role,
-          date: new Date(drive.driveDatetime).toLocaleDateString(),
-          time: new Date(drive.driveDatetime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        }));
-
-        setCompanies(formattedData);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        setCompanies([]);
-        if (!error) setError("Could not load data. Please try again later.");
-      } finally {
-        setLoading(false);
+      if (!res) {
+        // authFetch returns null if refresh fails
+        logout();
+        router.push("/login");
+        return;
       }
-    };
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        setError(errorData.message || "Failed to fetch next up drives.");
+        throw new Error("API call failed.");
+      }
+
+      const data = await res.json();
+      const formattedData = data.map((drive) => ({
+        id: drive.id,
+        company: drive.companyName,
+        role: drive.role,
+        date: new Date(drive.driveDatetime).toLocaleDateString(),
+        time: new Date(drive.driveDatetime).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+
+      setCompanies(formattedData);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setCompanies([]);
+      if (!error) setError("Could not load data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCompanies();
   }, []);
 
@@ -102,9 +93,7 @@ export default function NextUpCompanies() {
                 >
                   {drive.company?.[0] || "?"}
                 </div>
-                <h3 className="text-2xl font-bold text-green-300">
-                  {drive.company}
-                </h3>
+                <h3 className="text-2xl font-bold text-green-300">{drive.company}</h3>
                 <div className="text-gray-300 space-y-2 mt-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-gray-400" />

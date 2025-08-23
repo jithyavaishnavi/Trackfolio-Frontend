@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Montserrat, Poppins } from "next/font/google";
 import { Plus, Trash2 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "600", "700"] });
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -12,34 +13,63 @@ export default function Company({ params }) {
   const searchParams = useSearchParams();
   const previousTab = searchParams.get("from") || "upcoming";
   const router = useRouter();
+  const { authFetch, logout } = useAuth();
 
   const [companyName, setCompanyName] = useState("");
   const [driveDateTime, setDriveDateTime] = useState("");
   const [notes, setNotes] = useState([""]);
   const [links, setLinks] = useState([""]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
 
-  // Fetch drive data
+  // Fetch drive data with auth
   useEffect(() => {
-    if (!driveId) return;
-    (async () => {
-      try {
-        const res = await fetch(`http://localhost:8080/api/drives/${driveId}`);
-        if (!res.ok) throw new Error("Failed to fetch drive data");
-        const data = await res.json();
+    if (!driveId) {
+      setError("Invalid drive ID");
+      router.push("/home");
+      return;
+    }
 
+    const fetchDrive = async () => {
+      try {
+        const res = await authFetch(`http://localhost:8080/api/drives/${driveId}`);
+        if (!res) {
+          setError("Session expired. Please login again.");
+          logout();
+          router.push("/login");
+          return;
+        }
+        if (res.status === 404) {
+          setError("Drive not found.");
+          router.push("/home");
+          return;
+        }
+        if (!res.ok) throw new Error("Failed to fetch drive data");
+
+        const data = await res.json();
         setCompanyName(data.companyName || "");
         setDriveDateTime(data.driveDateTime || "");
-        setNotes(Array.isArray(data.notes) ? data.notes : []);
-        setLinks(Array.isArray(data.links) ? data.links : []);
+        setNotes(Array.isArray(data.notes) && data.notes.length > 0 ? data.notes : [""]);
+        setLinks(Array.isArray(data.links) && data.links.length > 0 ? data.links : [""]);
+        setError("");
       } catch (err) {
         console.error(err);
-        setCompanyName("");
-        setDriveDateTime("");
-        setNotes([""]);
-        setLinks([""]);
+        setError("Failed to fetch drive data");
+        router.push("/home");
+      } finally {
+        setLoading(false);
       }
-    })();
-  }, [driveId]);
+    };
+
+    fetchDrive();
+  }, [driveId, authFetch, logout, router]);
+
+  // Toast helper
+  const showToast = (message, duration = 3000) => {
+    setToast(message);
+    setTimeout(() => setToast(""), duration);
+  };
 
   // Note actions
   const addNote = () => setNotes([...notes, ""]);
@@ -75,20 +105,36 @@ export default function Company({ params }) {
         notes: notes.filter((n) => n.trim() !== ""),
       };
 
-      const res = await fetch("http://localhost:8080/api/drives", {
+      const res = await authFetch("http://localhost:8080/api/drives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Save failed");
+      if (!res || !res.ok) {
+        if (res && res.status === 403) {
+          logout();
+          router.push("/login");
+          return;
+        }
+        throw new Error("Save failed");
+      }
 
-      router.push(`/home?tab=${previousTab}`);
+      showToast("Drive saved successfully!");
+      setTimeout(() => router.push(`/home?tab=${previousTab}`), 1000);
     } catch (err) {
       console.error("Error saving:", err);
       alert("Failed to save. Check console.");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        <div className="w-10 h-10 border-4 border-lime-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col min-h-screen bg-black text-white ${montserrat.className}`}>
@@ -160,7 +206,16 @@ export default function Company({ params }) {
             <Plus className="w-5 h-5" /> Add Note
           </button>
         </div>
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-[#8FE649] text-black px-4 py-2 rounded shadow-lg animate-fadeIn">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
