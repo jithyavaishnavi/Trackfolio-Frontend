@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext"; // Added for consistent login handling
 
 // Helper to check if user is already logged in
 const isAuthenticated = () => {
@@ -13,6 +14,7 @@ const isAuthenticated = () => {
 
 export default function CreateAccount() {
   const router = useRouter();
+  const { login } = useAuth(); // Use AuthContext to store user & tokens
 
   // Redirect authenticated users
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function CreateAccount() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/auth/register";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,8 +54,8 @@ export default function CreateAccount() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (!password.trim()) {
+      setError("Password cannot be empty");
       return;
     }
 
@@ -73,9 +75,8 @@ export default function CreateAccount() {
         return;
       }
 
-      // Save tokens safely
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      // Use AuthContext login to store user and tokens consistently
+      login({ email }, { accessToken: data.accessToken, refreshToken: data.refreshToken });
 
       router.replace("/home");
     } catch (err) {

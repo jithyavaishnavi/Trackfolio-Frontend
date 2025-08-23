@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_TYPE = "upcoming"; // can be "upcoming", "nextup", "completed"
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/upcoming";
+  process.env.NEXT_PUBLIC_API_URL || `http://localhost:8080/drives/type?type=${API_TYPE}`;
 
 export default function Upcoming() {
   const router = useRouter();
@@ -22,25 +23,20 @@ export default function Upcoming() {
       setLoading(true);
       const res = await authFetch(API_URL, { method: "GET" });
 
-      if (!res) {
-        logout();
-        router.push("/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const errData = await res.json();
-        setError(errData.message || "Failed to fetch upcoming drives.");
-        return;
-      }
-
       const data = await res.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        setCompanies([]);
+        setError("No drives found.");
+        return;
+      }
+
       const formatted = data
         .map((drive) => {
           const d = new Date(drive.driveDatetime);
           if (isNaN(d)) return null;
           return {
-            id: drive.id,
+            id: drive.id, // keep locally for frontend navigation
             company: drive.companyName,
             role: drive.role,
             date: d.toLocaleDateString(),
@@ -52,9 +48,16 @@ export default function Upcoming() {
       setCompanies(formatted);
       setError("");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch upcoming drives:", err);
+      if (err.message.includes("Unauthorized")) {
+        logout();
+        router.push("/login");
+      } else if (err.message.includes("Type must be")) {
+        setError("Invalid drive type specified.");
+      } else {
+        setError("Could not load data. Please try again later.");
+      }
       setCompanies([]);
-      setError("Could not load data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -64,11 +67,12 @@ export default function Upcoming() {
     fetchCompanies();
   }, []);
 
-  const handleViewDetails = (id) => router.push(`/drive/${id}?from=upcoming`);
+  const handleViewDetails = (id) => router.push(`/drive/${id}?from=${API_TYPE}`);
 
   return (
     <section className="mt-10 mb-12 max-w-6xl mx-auto px-4">
       <h2 className="text-4xl font-bold mb-12 text-white text-center">Upcoming Drives</h2>
+
       {loading ? (
         <div className="flex justify-center py-10">
           <div className="w-10 h-10 border-4 border-lime-500 border-t-transparent rounded-full animate-spin"></div>

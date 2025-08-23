@@ -1,12 +1,16 @@
 "use client";
+import Link from "next/link"; // add at the top
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_TYPE = "completed"; // can be "upcoming", "nextup", "completed"
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/completed";
+  process.env.NEXT_PUBLIC_API_URL || `http://localhost:8080/drives/type?type=${API_TYPE}`;
+
+
 
 export default function Completed() {
   const router = useRouter();
@@ -107,14 +111,14 @@ export default function Completed() {
                   <span>{drive.time}</span>
                 </div>
               </div>
-              <button
-                onClick={() => handleViewDetails(drive.id)}
+              <Link
+                href={`/company/${drive.id}`}
                 className="mt-4 flex items-center justify-center gap-2 rounded-full py-2 px-4 font-semibold text-black hover:opacity-90 transition-all duration-300"
                 style={{ background: greenGradient }}
                 aria-label={`View details for ${drive.company}`}
               >
                 View Details <ArrowRight size={16} />
-              </button>
+              </Link>
             </motion.div>
           ))}
         </div>

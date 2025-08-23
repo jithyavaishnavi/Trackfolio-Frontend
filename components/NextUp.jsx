@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_TYPE = "nextup"; // can be "upcoming", "nextup", "completed"
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/drives/nextup";
+  process.env.NEXT_PUBLIC_API_URL || `http://localhost:8080/drives/type?type=${API_TYPE}`;
+
 
 export default function NextUpCompanies() {
   const router = useRouter();
