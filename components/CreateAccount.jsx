@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useAuth } from "../contexts/AuthContext"; // Added for consistent login handling
+import { useAuth } from "../contexts/AuthContext"; // central auth context
 
-// Helper to check if user is already logged in
+// Helper to check login
 const isAuthenticated = () => {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("accessToken");
@@ -14,9 +14,9 @@ const isAuthenticated = () => {
 
 export default function CreateAccount() {
   const router = useRouter();
-  const { login } = useAuth(); // Use AuthContext to store user & tokens
+  const { login } = useAuth();
 
-  // Redirect authenticated users
+  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated()) {
       router.replace("/home");
@@ -75,8 +75,11 @@ export default function CreateAccount() {
         return;
       }
 
-      // Use AuthContext login to store user and tokens consistently
-      login({ email }, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+      // store in AuthContext
+      login(
+        { email },
+        { accessToken: data.accessToken, refreshToken: data.refreshToken }
+      );
 
       router.replace("/home");
     } catch (err) {
@@ -87,120 +90,117 @@ export default function CreateAccount() {
     }
   };
 
-
   return (
-    <div className="backdrop-blur-md min-h-screen flex items-center justify-center">
-      <div className="fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm z-50 p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative bg-black/40 backdrop-blur-md border border-white/20 rounded-2xl p-8 sm:p-12 shadow-xl w-full max-w-md"
-        >
-          {/* Close Button */}
+    <div
+  className="min-h-screen flex items-center justify-center"
+  style={{
+    backgroundImage: "url('/bg2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    backgroundSize: "cover", // use longhand, not shorthand
+  }}
+>
+  <div className="fixed inset-0 flex justify-center items-center bg-black/5 z-50 p-4">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="relative bg-[#F5F5DC]/6 backdrop-blur-md border border-black/20 rounded-2xl p-8 sm:p-12 shadow-xl w-full max-w-md"
+    >
+      {/* Close Button */}
+      <button
+        onClick={() => router.replace("/")}
+        className="absolute top-4 right-4 text-gray-400 hover:text-[#A7D16C] text-2xl"
+      >
+        &times;
+      </button>
+
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F5DC] text-center mb-6">
+        Create Account
+      </h2>
+
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 text-[#F5F5DC] placeholder-gray-400 focus:border-[#A7D16C] focus:outline-none transition"
+          disabled={loading}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 text-[#F5F5DC] placeholder-gray-400 focus:border-[#A7D16C] focus:outline-none transition"
+          disabled={loading}
+          required
+        />
+
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 text-[#F5F5DC] placeholder-gray-400 focus:border-[#A7D16C] focus:outline-none w-full transition"
+            disabled={loading}
+            required
+          />
           <button
-            onClick={() => router.replace("/")}
-            className="absolute top-4 right-4 text-gray-400 hover:text-[#8FE649] text-2xl"
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-3 text-gray-400 hover:text-[#A7D16C]"
           >
-            &times;
+            {showPassword ? "Hide" : "Show"}
           </button>
+        </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
-            Create Account
-          </h2>
+        <div className="relative">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 text-[#F5F5DC] placeholder-gray-400 focus:border-[#A7D16C] focus:outline-none w-full transition"
+            disabled={loading}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-4 top-3 text-gray-400 hover:text-[#A7D16C]"
+          >
+            {showConfirmPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="fullName"
-              placeholder="Full Name"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
-              disabled={loading}
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email address"
-              value={formData.email}
-              onChange={handleChange}
-              className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none transition"
-              disabled={loading}
-              required
-            />
+        <button
+          type="submit"
+          disabled={loading}
+          className={`bg-[#A7D16C] text-[#F5F5DC] rounded-full py-3 mt-4 hover:shadow-lg hover:bg-[#A7D16C] transition font-semibold ${
+            loading ? "opacity-60 cursor-not-allowed" : ""
+          }`}
+        >
+          {loading ? "Creating..." : "Create Account"}
+        </button>
+      </form>
 
-            {/* Password Input */}
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
-                disabled={loading}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649]"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
+      {error && (
+        <p className="text-red-400 text-center mt-2 text-sm">{error}</p>
+      )}
 
-            {/* Confirm Password Input */}
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="bg-transparent border border-white/50 hover:border-[#8FE649] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:border-[#8FE649] focus:outline-none w-full transition"
-                disabled={loading}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-3 text-gray-400 hover:text-[#8FE649]"
-              >
-                {showConfirmPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`bg-[#8FE649] text-white rounded-full py-3 mt-4 hover:shadow-lg hover:bg-[#8FE649] transition font-semibold ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              {loading ? "Creating..." : "Create Account"}
-            </button>
-          </form>
-
-          {error && <p className="text-red-400 text-center mt-2 text-sm">{error}</p>}
-
-          <p className="text-xs text-gray-400 mt-6 text-center">
-            By continuing, you agree to the{" "}
-            <span className="text-green-400 hover:underline">Terms of Use</span> and{" "}
-            <span className="text-green-400 hover:underline">Privacy Policy</span>.
-          </p>
-
-          <p className="text-center text-gray-300 text-sm mt-4">
-            Already have an account?{" "}
-            <Link href="/login" className="text-green-400 hover:underline">
-              Login
-            </Link>
-          </p>
-        </motion.div>
-      </div>
-    </div>
+      <p className="text-center text-gray-300 text-sm mt-4">
+        Already have an account?{" "}
+        <Link href="/login" className="text-[#A7D16C] hover:underline">
+          Login
+        </Link>
+      </p>
+    </motion.div>
+  </div>
+</div>
   );
 }

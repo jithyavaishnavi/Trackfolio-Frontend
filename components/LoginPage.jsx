@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -44,8 +45,11 @@ export default function LoginPage() {
       if (!response.ok) {
         setError(data.message || "Login failed. Please try again.");
       } else {
-        // Store user & both tokens
-        login({ email }, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+        // Store user & both tokens in AuthContext
+        login(
+          { email },
+          { accessToken: data.accessToken, refreshToken: data.refreshToken }
+        );
         router.replace("/home");
       }
     } catch (err) {
@@ -56,96 +60,94 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm z-50 p-4 sm:p-6">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="relative bg-black/30 backdrop-blur-lg p-6 sm:p-8 md:p-12 rounded-2xl border border-white/20 w-full max-w-md shadow-lg"
-      >
-        {/* Close Button */}
+    <div
+  className="fixed inset-0 flex justify-center items-center bg-black/0 backdrop-blur-sm z-50 p-4 sm:p-6"
+  style={{
+    backgroundImage: "url('/bg2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    backgroundSize: "cover", // use longhand, not shorthand
+  }}
+>
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.4 }}
+    className="relative bg-[#F5F5DC]/10 backdrop-blur-lg p-6 sm:p-8 md:p-12 rounded-2xl border border-black/20 w-full max-w-md shadow-lg"
+  >
+    {/* Close Button */}
+    <button
+      onClick={() => router.push("/")}
+      className="absolute top-4 right-4 text-gray-400 hover:text-[#A7D16C] text-2xl"
+      aria-label="Close sign-in popup"
+    >
+      &times;
+    </button>
+
+    {/* Heading */}
+    <h3 className="text-2xl sm:text-3xl font-bold text-center text-[#F5F5DC] mb-6">
+      Log in
+    </h3>
+
+    {/* Form */}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <input
+        type="email"
+        placeholder="Email address"
+        className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 text-[#F5F5DC] placeholder-gray-400 focus:outline-none focus:border-[#A7D16C] transition"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        disabled={loading}
+        required
+      />
+
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          placeholder="Password"
+          className="bg-[#F5F5DC]/15 border border-black/50 hover:border-[#A7D16C] rounded-xl px-4 py-3 w-full text-[#F5F5DC] placeholder-gray-400 focus:outline-none focus:border-[#A7D16C] transition"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+          required
+        />
         <button
-          onClick={() => router.push("/")}
-          className="absolute top-4 right-4 text-gray-400 hover:text-[#8FE649] text-2xl"
-          aria-label="Close sign-in popup"
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-4 top-3 text-gray-400 hover:text-[#A7D16C]"
         >
-          &times;
+          {showPassword ? "Hide" : "Show"}
         </button>
+      </div>
 
-        {/* Heading */}
-        <h3 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-          Sign in
-        </h3>
+      <button
+        type="submit"
+        disabled={loading}
+        className={`bg-[#A7D16C] text-[#F5F5DC] rounded-full py-3 mt-3 hover:shadow-lg hover:bg-[#A7D16C] transition font-semibold ${
+          loading ? "opacity-60 cursor-not-allowed" : ""
+        }`}
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
+    </form>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email or mobile phone number"
-            className="bg-black/20 border border-white rounded px-4 py-3 text-white placeholder-gray-400 focus:outline-none"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    {/* Error */}
+    {error && (
+      <p className="text-red-400 text-center mt-3 text-sm">{error}</p>
+    )}
 
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Your password"
-              className="bg-black/20 border border-white rounded px-4 py-3 w-full text-white placeholder-gray-400 focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-gray-400 hover:text-white"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-[#8FE649] text-black rounded-full py-3 mt-3 hover:bg-white hover:text-[#8FE649] font-medium transition disabled:opacity-60"
-          >
-            {loading ? "Logging in..." : "LOGIN"}
-          </button>
-        </form>
-
-        {/* Error */}
-        {error && <p className="text-red-400 text-center mt-3">{error}</p>}
-
-        {/* Extra Links */}
-        <p className="text-xs text-gray-400 mt-6 text-center">
-          By continuing, you agree to our{" "}
-          <span className="text-[#8FE649] cursor-pointer">Terms of Use</span> &{" "}
-          <span className="text-[#8FE649] cursor-pointer">Privacy Policy</span>.
-        </p>
-
-        <div className="flex justify-between text-xs text-gray-400 mt-4">
-          <span className="cursor-pointer hover:text-[#8FE649]">
-            Forgot password?
-          </span>
-          <span className="cursor-pointer hover:text-[#8FE649]">
-            Other sign-in issues
-          </span>
-        </div>
-
-        <hr className="border-white my-6" />
-
-        {/* Create Account */}
-        <p className="text-center text-gray-400 text-sm mb-3">
-          New to Trackfolio?
-        </p>
-        <Link href="/create-account">
-          <button className="border border-white rounded-full py-3 w-full hover:border-[#8FE649] text-white hover:text-[#8FE649]">
-            Create Account
-          </button>
-        </Link>
-      </motion.div>
-    </div>
+    <p className="text-center text-gray-300 text-sm mt-4">
+      Don&apos;t have an account?{" "}
+      <Link
+        href="/create-account"
+        className="text-[#A7D16C] hover:underline"
+      >
+        Sign up
+      </Link>
+    </p>
+  </motion.div>
+</div>
   );
 }
+    

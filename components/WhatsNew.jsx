@@ -6,6 +6,7 @@ import Link from "next/link";
 
 export default function WhatsNew() {
   const green = "#8FE649";
+  const beige = "#F5F5DC";
 
   const features = [
     {
@@ -35,8 +36,8 @@ export default function WhatsNew() {
     },
     {
       icon: <Bell size={48} />,
-      title: "Real-Time Notifications",
-      desc: "Get push notifications for upcoming drives and deadlines.",
+      title: "Chatbot Integration",
+      desc: "Interact with our AI chatbot for instant support and guidance.",
     },
   ];
 
@@ -52,23 +53,29 @@ export default function WhatsNew() {
       }}
     >
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col min-h-screen text-white px-6 py-16 max-w-6xl mx-auto">
+      <div
+        className="relative z-10 flex flex-col min-h-screen px-6 py-16 max-w-6xl mx-auto"
+        style={{ color: "#F5F5DC" }}
+      >
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-5xl md:text-6xl font-extrabold mb-6 text-center drop-shadow-lg"
         >
-          <span className="text-[#8FE649]">TrackFolio</span> Features
+          <span className="text-[#A7D16C]">TrackFolio</span> Features
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="max-w-2xl text-center text-gray-200 mb-16 mx-auto text-lg leading-relaxed drop-shadow-md"
+          className="max-w-2xl text-center mb-16 mx-auto text-lg leading-relaxed drop-shadow-md"
+          style={{ color: "#F5F5DC" }}
         >
-          TrackFolio is designed to simplify your placement journey. Here’s an overview of all the features that make it your ultimate placement companion.
+          TrackFolio is designed to simplify your placement preparation. Here’s
+          an overview of all the features that make it your ultimate placement
+          companion.
         </motion.p>
 
         {/* Features Grid */}
@@ -80,14 +87,16 @@ export default function WhatsNew() {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.08 }}
               transition={{ delay: idx * 0.2, duration: 0.6 }}
-              className="backdrop-blur-xl bg-white/10 border border-white/30 rounded-3xl p-6 text-center shadow-xl flex flex-col justify-between"
+              className="backdrop-blur-xl bg-white/10 border border-black/20 rounded-3xl p-6 text-center shadow-xl flex flex-col justify-between"
+              style={{ color: "#F5F5DC" }}
             >
-              <div className="mb-4" style={{ color: green }}>
+              <div className="mb-4" style={{ color: "#A7D16C" }}>
                 {feature.icon}
               </div>
               <h3 className="font-semibold text-2xl mb-2">{feature.title}</h3>
-              <p className="text-gray-200 text-sm mb-4">{feature.desc}</p>
-              
+              <p className="text-sm mb-4" style={{ color: "#F5F5DC" }}>
+                {feature.desc}
+              </p>
             </motion.div>
           ))}
         </div>
