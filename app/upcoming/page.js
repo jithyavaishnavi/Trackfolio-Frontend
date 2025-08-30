@@ -1,11 +1,11 @@
-import NavBarMain from "@/components/NavBarMain";   
-import Upcoming from "@/components/UpComing";
+import NavBarMain from "@/components/NavBarMain";
+import UpComing from "@/components/UpComing";
 
 export default function UpcomingPage() {
   return (
     <div>
       <NavBarMain />
-      <Upcoming />
+      <UpComing />
       
     </div>
   );

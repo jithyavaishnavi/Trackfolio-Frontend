@@ -112,74 +112,96 @@ export default function LaunchPage() {
     <div
       className="min-h-screen flex flex-col"
       style={{
-        backgroundImage: `url('/bg.jpg')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundImage: "url('/bg2.png')",
         backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
         backgroundAttachment: "fixed",
+        backgroundSize: "cover", // use longhand, not shorthand
       }}
     >
-      <div className="bg-black/70 backdrop-blur-md min-h-screen flex flex-col text-white">
+      <div className=" min-h-screen flex flex-col text-white">
         {/* Navbar */}
         <header className="flex items-center justify-between px-8 py-4 mt-4">
-          <Link href="/" className="text-[#ffffff] drop-shadow-[0_0_8px_#8FE649] text-2xl font-bold tracking-wide">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="text-white drop-shadow-[0_0_8px_#8FE649] text-2xl font-bold tracking-wide"
+          >
             TRACKFOLIO.
           </Link>
 
-          <nav className="flex flex-wrap justify-between items-center gap-6">
-            <ul className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-gray-300 text-sm sm:text-base mt-4">
-              <li className="hover:text-[#8FE649] cursor-pointer">
-                <Link href="/">Home</Link>
-              </li>
-              <li className="hover:text-[#8FE649] cursor-pointer">
+          {/* Glassmorphic Menu */}
+          {/* Navigation */}
+          <nav className="flex items-center justify-center gap-6">
+            <ul className="flex items-center justify-center gap-6 text-gray-300 text-sm sm:text-base
+               bg-white/10 backdrop-blur-lg border border-white/20 rounded-full px-6 py-4 mx-auto">
+              <li className="hover:text-[#8FE649] cursor-pointer transition-colors duration-300">
                 <Link href="/about">About</Link>
               </li>
-              <li className="hover:text-[#8FE649] cursor-pointer">
+              <li className="hover:text-[#8FE649] cursor-pointer transition-colors duration-300">
                 <Link href="/contact">Contact Us</Link>
               </li>
-              <li className="hover:text-[#8FE649] cursor-pointer">
-                <Link href="/whats-new">What's New?</Link>
+              <li className="hover:text-[#8FE649] cursor-pointer transition-colors duration-300">
+                <Link href="/whatsnew">What's New?</Link>
               </li>
-              <li className="hover:text-[#8FE649] cursor-pointer">
-                <Link href="/contact">Feedback</Link>
-              </li>
+
             </ul>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 ml-4">
+              <Link href="/login">
+                <button className="h-10 sm:h-12 px-6 sm:px-8 py-2 sm:py-3 bg-transparent border border-white text-white rounded-full font-semibold hover:bg-white hover:text-[#8FE649] transition">
+                  Log In
+                </button>
+              </Link>
+              <Link href="/create-account">
+                <button className="h-10 sm:h-12 px-6 sm:px-8 py-2 sm:py-3 bg-[#8FE649] text-black rounded-full font-semibold hover:bg-white hover:text-[#8FE649] transition">
+                  Sign Up
+                </button>
+              </Link>
+            </div>
           </nav>
-          <Link href="/login">
-            <button className="h-10 flex justify-center items-center bg-transparent font-semibold text-white border border-white rounded-full px-6 sm:px-8 py-2 sm:py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
-              LogIn
-            </button>
-          </Link>
         </header>
 
+
         {/* Hero Section */}
-        <div className="flex flex-col items-center justify-center flex-grow min-h-[60vh] sm:min-h-screen gap-8 sm:gap-12 relative z-10 px-4 sm:px-8">
+        <div className="flex flex-col items-center justify-center flex-grow min-h-[70vh] sm:min-h-screen px-6 sm:px-12">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            className="max-w-4xl text-center"
+            className="max-w-4xl text-center flex flex-col items-center gap-6"
           >
-            <p className="text-base sm:text-lg text-gray-400 mb-3">
-              Stop juggling spreadsheets and emails during{" "}
-            </p>
-            <h2 className="text-3xl sm:text-5xl md:text-7xl font-extrabold leading-tight">
+            <h2 className="text-4xl sm:text-6xl md:text-7xl font-extrabold leading-tight text-white">
               Best <span className="text-[#8FE649]">placement</span>
               <br />
               organizing platform <br /> for your future.
             </h2>
 
-            <p className="text-sm sm:text-lg text-gray-400 mt-3 leading-relaxed">
-              Stop juggling spreadsheets and emails during<br />
-              Stop juggling sphkjs ncflk ncla kncnaskc
-            </p>
-            <Link href="/create-account">
-              <button className="mt-6 bg-[#8FE649] font-semibold text-white rounded-full px-6 sm:px-8 py-2 sm:py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
-                Get Started
-              </button>
-            </Link>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="text-lg sm:text-xl text-gray-300 leading-relaxed mt-1"
+            >
+              Stop juggling spreadsheets and emails during your placement prep. <br />
+              Organize everything in one platform and focus on your career growth.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.8 }}
+            >
+              <Link href="/create-account">
+                <button className="flex items-center justify-center mt-1 bg-[#8FE649] font-semibold text-white rounded-full px-6 sm:px-8 py-3 hover:bg-white hover:text-[#8FE649] transition text-sm sm:text-base">
+                  Get Started
+                </button>
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
+
 
         {/* Popup Sign-in */}
         {showPopup && (
@@ -202,11 +224,14 @@ export default function LaunchPage() {
                 Sign in
               </h3>
 
-              <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handleLoginSubmit}>
+              <form
+                className="flex flex-col gap-4 sm:gap-5"
+                onSubmit={handleLoginSubmit}
+              >
                 <input
                   type="email"
                   placeholder="Email or mobile phone number"
-                  className="bg-transparent border border-white hover:border-[#8FE649] rounded px-4 sm:px-5 py-2 sm:py-3 focus:outline-none text-base sm:text-lg"
+                  className="bg-black/20 border border-white rounded px-4 sm:px-5 py-3 focus:outline-none text-white placeholder-gray-400"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -214,7 +239,7 @@ export default function LaunchPage() {
                 <input
                   type="password"
                   placeholder="Your password"
-                  className="bg-transparent border border-white hover:border-[#8FE649] rounded px-4 sm:px-5 py-2 sm:py-3 focus:outline-none text-base sm:text-lg"
+                  className="bg-black/20 border border-white rounded px-4 sm:px-5 py-3 focus:outline-none text-white placeholder-gray-400"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -229,18 +254,16 @@ export default function LaunchPage() {
               </form>
 
               {error && (
-                <p className="text-red-400 text-center mt-2 text-sm font-semibold">{error}</p>
+                <p className="text-red-400 text-center mt-2 text-sm font-semibold">
+                  {error}
+                </p>
               )}
 
               <p className="text-xs sm:text-sm text-gray-400 mt-4 sm:mt-6 text-center">
                 By continuing, you agree to the{" "}
-                <span className="text-[#8FE649] cursor-pointer">
-                  Terms of Use
-                </span>{" "}
+                <span className="text-[#8FE649] cursor-pointer">Terms of Use</span>{" "}
                 and{" "}
-                <span className="text-[#8FE649] cursor-pointer">
-                  Privacy Policy
-                </span>.
+                <span className="text-[#8FE649] cursor-pointer">Privacy Policy</span>.
               </p>
 
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 text-xs sm:text-sm text-gray-400 mt-4 sm:mt-5">
@@ -252,13 +275,13 @@ export default function LaunchPage() {
                 </span>
               </div>
 
-              <hr className="border-gray-700 my-4 sm:my-6" />
+              <hr className="border-white my-4 sm:my-6" />
 
               <p className="text-center text-gray-400 text-xs sm:text-sm">
                 New to our community
               </p>
               <Link href="/create-account">
-                <button className="border border-gray-400 rounded-full py-2 sm:py-3 w-full mt-3 hover:border-[#8FE649] text-base sm:text-lg text-white">
+                <button className="border border-white rounded-full py-2 sm:py-3 w-full mt-3 hover:border-[#8FE649] text-base sm:text-lg text-white">
                   Create Account
                 </button>
               </Link>
@@ -266,6 +289,14 @@ export default function LaunchPage() {
           </div>
         )}
       </div>
-    </div>
+      <footer className="bg-transparent text-gray-300 px-8 py-6 mt-12">
+        <div className="max-w-6xl mx-auto flex items-center sm:flex-row justify-center items-center gap-4 sm:gap-0">
+          <div className="text-sm sm:text-base">
+            © {new Date().getFullYear()} TRACKFOLIO.
+          </div>
+        </div>
+      </footer>
+
+    </div >
   );
 }

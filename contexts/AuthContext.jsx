@@ -47,12 +47,14 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
+      console.log("Access token refreshed");
 
       return data.accessToken;
     } catch (err) {
       console.error("refreshAccessToken failed:", err);
       logout();
       throw new Error("Session expired. Please login again.");
+      console.log("Session expired. Please login again.");
     }
   };
 
@@ -67,18 +69,25 @@ export const AuthProvider = ({ children }) => {
 
     if (tokenToUse) headers["Authorization"] = `Bearer ${tokenToUse}`;
 
-    let response = await fetch(url, { ...options, headers });
+    // FIX: Prepend the BASE_URL to the request URL.
+    let response = await fetch(`${BASE_URL}${url}`, { ...options, headers });
+    console.log("authFetch headers:", headers);
+    console.log("authFetch response status:", response.status);
 
     // Retry once if access token expired
     if ((response.status === 401 || response.status === 403) && retry) {
       try {
         const newAccessToken = await refreshAccessToken();
-        const retryHeaders = { ...headers, Authorization: `Bearer ${newAccessToken}` };
+        const retryHeaders = {
+          ...headers,
+          Authorization: `Bearer ${newAccessToken}`,
+        };
         response = await fetch(url, { ...options, headers: retryHeaders });
       } catch (err) {
         throw err; // already handled in refreshAccessToken
       }
     }
+    console.log("authFetch final response status:", response.status);
 
     if (!response.ok) {
       let msg = `Request failed with status ${response.status}`;
@@ -101,6 +110,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("accessToken", tokens.accessToken);
     localStorage.setItem("refreshToken", tokens.refreshToken);
+    console.log("User logged in:", userData);
   };
 
   // ---- Logout ----
@@ -111,13 +121,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    console.log("User logged out");
   };
 
   const userFirstName = user?.firstName || "";
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, refreshToken, authFetch, login, logout, userFirstName }}
+      value={{
+        user,
+        accessToken,
+        refreshToken,
+        authFetch,
+        login,
+        logout,
+        userFirstName,
+      }}
     >
       {children}
     </AuthContext.Provider>
