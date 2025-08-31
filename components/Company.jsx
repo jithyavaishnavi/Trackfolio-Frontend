@@ -559,6 +559,13 @@ export default function Company() {
       </motion.div>
     )}
   </div>
+  <footer className="bg-transparent text-gray-300 px-8 py-6 mt-12">
+        <div className="max-w-6xl mx-auto flex items-center sm:flex-row justify-center items-center gap-4 sm:gap-0">
+          <div className="text-sm sm:text-base">
+            © {new Date().getFullYear()} TRACKFOLIO.
+          </div>
+        </div>
+      </footer>
 </div>
   );
 }
